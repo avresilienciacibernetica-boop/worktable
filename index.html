@@ -1,0 +1,1031 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CRM Compras Coupa</title>
+<style>
+body{font-family:Segoe UI,Arial;margin:0;background:#f6f8fb}
+.steps-nav{position:sticky;top:0;background:#0b5fff;display:flex;z-index:1200;box-shadow:0 2px 6px rgba(0,0,0,.15)}
+.step-btn{background:transparent;border:none;color:#cfe0ff;padding:14px 22px;cursor:pointer;font-weight:600;font-size:14px}
+.step-btn.ativo{background:#08427a;color:#fff}
+.step-view{display:none}
+.step-view.ativo{display:block}
+.sourcing-wrap{padding:12px}
+.sourcing-colar{min-height:30px;background:#fff;border:2px dashed #b7c6e6;border-radius:6px;padding:10px;font-size:13px;color:#555;margin-bottom:10px}
+.sourcing-colar:empty:before{content:attr(data-placeholder);color:#999}
+.sourcing-colar-linha{min-height:20px;min-width:110px;max-width:160px;background:#fff;border:1px dashed #b7c6e6;border-radius:4px;padding:4px 6px;font-size:11px;color:#555}
+.sourcing-colar-linha:empty:before{content:attr(data-placeholder);color:#aaa;font-size:11px}
+.sourcing-colar-linha.preenchida{border-style:solid;border-color:#3a9d5d;background:#eefaf1}
+.sourcing-acoes{margin-bottom:10px;display:flex;gap:8px;align-items:center}
+.sourcing-status{font-size:12px;color:#0b5fff;margin-bottom:8px;min-height:16px}
+#btnAbrirLote{background:#0b5fff;color:#fff;border:none;border-radius:4px}
+#btnAbrirLote:hover{background:#0847c4}
+#btnLimparSourcing{background:#e74c3c;color:#fff;border:none;border-radius:4px}
+#btnLimparSourcing:hover{background:#c0392b}
+.sourcing-table{width:100%;border-collapse:collapse;background:#fff;font-size:13px}
+.sourcing-table th{border-bottom:2px solid #ddd;padding:10px 8px;text-align:left;background:#fff}
+.sourcing-table td{border-bottom:1px solid #eee;padding:8px}
+.sourcing-table th:nth-child(10),.sourcing-table td:nth-child(10){padding-right:4px}
+.sourcing-table th:nth-child(11),.sourcing-table td:nth-child(11){padding-left:4px}
+.badge-aberto{background:#d4f4dd;color:#1a7a3c;padding:3px 8px;border-radius:10px;font-size:11px;font-weight:600}
+.badge-pendente{background:#f1f1f1;color:#777;padding:3px 8px;border-radius:10px;font-size:11px;font-weight:600}
+tr.linha-aberta{background:#f6fffa}
+nav{position:sticky;top:46px;background:#fff;border-bottom:1px solid #ddd;padding:10px;display:flex;gap:10px;align-items:center;z-index:1000}
+.container{padding:12px}
+table{width:100%;border-collapse:collapse;background:#fff;font-size:13px}
+thead th{border-bottom:2px solid #ddd;padding:10px 8px;background:#fff;text-align:left}
+tbody td{border-bottom:1px solid #eee;padding:8px}
+tbody tr:hover{background:#f2f6fc}
+input,button{padding:8px}
+button{cursor:pointer}
+#btnExcluir{background:#e74c3c;color:#fff;border:none;border-radius:4px}
+#btnExcluir:hover{background:#c0392b}
+.th-wrap{position:relative;display:inline-block}
+.th-row{display:inline-flex;align-items:center;gap:4px}
+.filtbtn{padding:2px 6px;font-size:11px;line-height:1;border:1px solid #ccc;background:#fff;border-radius:3px;cursor:pointer}
+.filtbtn:hover{background:#f2f6fc}
+.filtpanel{display:none;position:absolute;top:100%;left:0;background:#fff;border:1px solid #ccc;border-radius:4px;box-shadow:0 4px 10px rgba(0,0,0,.15);padding:8px;z-index:1500;font-weight:normal;text-align:left;white-space:nowrap}
+.filtpanel button{display:block;width:100%;margin:2px 0;padding:6px 8px;font-size:12px;text-align:left;border:1px solid #eee;background:#fff;border-radius:3px}
+.filtpanel button:hover{background:#f2f6fc}
+.filtpanel input{font-size:12px;margin:2px 0;padding:6px}
+.filtpanel hr{border:none;border-top:1px solid #eee;margin:4px 0}
+.pastewrap{position:relative;display:inline-block}
+.pastewrap textarea{display:block;font-size:12px;margin-bottom:4px;padding:6px}
+.th-filtro-ativo{background:#ffe0b2}
+.forn-linha{display:flex;gap:4px;align-items:center;margin-bottom:3px}
+.forn-linha:last-child{margin-bottom:0}
+.forn-label{font-size:11px;color:#888;width:16px;flex-shrink:0}
+.forn-nome{width:110px;padding:4px}
+.forn-preco{width:80px;padding:4px}
+.forn-compacto{color:#888;font-size:13px}
+.forn-total{font-size:12px;color:#333;width:90px;display:inline-block}
+#modalCadastro{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:3000;align-items:flex-start;justify-content:center}
+.cadbox{background:#fff;width:90%;max-width:900px;margin-top:40px;padding:16px;border-radius:6px;max-height:85vh;overflow:auto}
+.cadbox-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;border-bottom:1px solid #eee;padding-bottom:8px}
+.cadtabs button{margin-right:6px}
+.cadtabs button.ativo{background:#0b5fff;color:#fff;border-color:#0b5fff}
+.cadtable{width:100%;border-collapse:collapse;margin-top:8px}
+.cadtable th,.cadtable td{border-bottom:1px solid #eee;padding:8px;text-align:left;font-size:13px}
+.cadtable input{width:100%;box-sizing:border-box;padding:4px;font-size:13px}
+.btnFechar{background:#e74c3c;color:#fff;border:none;border-radius:4px;padding:6px 10px}
+</style>
+</head>
+<body>
+<div class="steps-nav">
+<button id="btnStep1" class="step-btn ativo" onclick="mostrarStep(1)">Step 1 (Sourcing)</button>
+<button id="btnStep2" class="step-btn" onclick="mostrarStep(2)">Step 2</button>
+</div>
+
+<div id="step1" class="step-view ativo">
+<div class="sourcing-wrap">
+<b>Step 1 - Sourcing</b>
+<p style="font-size:13px;color:#666">Acesse a listagem de eventos no Coupa Supplier Portal, dê Ctrl+A, Ctrl+C, e cole (Ctrl+V) na área abaixo. Pode colar quantas vezes quiser — os itens se acumulam na lista, sem duplicar.</p>
+<div id="colarSourcing" class="sourcing-colar" contenteditable="true" data-placeholder="Cole aqui o conteúdo copiado da página de Private Events do Coupa..."></div>
+<div id="statusSourcing" class="sourcing-status"></div>
+<div class="sourcing-acoes">
+<button id="btnAbrirLote" onclick="abrirProximosSourcing()">Abrir próximos 5</button>
+<button id="btnLimparSourcing" onclick="limparListaSourcing()">Limpar Lista</button>
+<button id="btnProcessarSourcing" onclick="processarInformacoesSourcing()">Processar Informações</button>
+</div>
+<table class="sourcing-table">
+<thead>
+<tr>
+<th><input type="checkbox" id="selAllSourcing" onclick="toggleAllSourcing(this)"></th>
+<th>Evento</th>
+<th>Empresa</th>
+<th>CNPJ</th>
+<th>Código</th>
+<th>Requisição</th>
+<th>Tipo</th>
+<th>Data Início</th>
+<th>Data Fim</th>
+<th>Outras Infos</th>
+<th>Colar Cotação</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody id="tbSourcing"></tbody>
+</table>
+</div>
+</div>
+
+<div id="step2" class="step-view">
+<nav>
+<b>CRM Compras Coupa</b>
+<input type="file" id="file">
+<span class="pastewrap">
+<button onclick="togglePanel('painelColar')">Colar Texto</button>
+<div class="filtpanel" id="painelColar">
+<textarea id="textoColado" rows="6" cols="45" placeholder="Cole aqui o texto exportado do Coupa"></textarea>
+<button onclick="processarTextoColado()">Processar</button>
+<button onclick="limparTextoColado()">Limpar</button>
+</div>
+</span>
+<button onclick="exportCSV()">Exportar Excel</button>
+<input id="busca" placeholder="Buscar">
+<button id="btnExcluir" onclick="excluirSelecionados()">Excluir Selecionados</button>
+<button id="btnCadastro" onclick="abrirCadastro()">Cadastro</button>
+</nav>
+
+<datalist id="destinos">
+<option>Vale Itabira MG</option>
+<option>Vale Serra ES</option>
+<option>Vale Vitória ES</option>
+<option>Vale Mariana MG</option>
+<option>Nexa Vazante MG</option>
+</datalist>
+
+<div class="container">
+<table>
+<thead>
+<tr>
+<th><input type="checkbox" id="selAll" onclick="toggleAll(this)"></th>
+<th>Item</th>
+<th id="thEvento"><div class="th-wrap"><span class="th-row">Evento
+<button class="filtbtn" onclick="togglePanel('painelEvento')">&#9662;</button></span>
+<div class="filtpanel" id="painelEvento">
+<button onclick="setOrdemEvento('original')">Ordem original</button>
+<button onclick="setOrdemEvento('crescente')">Crescente</button>
+<button onclick="setOrdemEvento('decrescente')">Decrescente</button>
+<hr>
+<button onclick="setFiltroEvento('par')">Par</button>
+<button onclick="setFiltroEvento('impar')">Ímpar</button>
+<button onclick="setFiltroEvento(null)">Limpar</button>
+</div>
+</div>
+</th>
+<th>Código</th>
+<th id="thDescricao" style="min-width:220px"><div class="th-wrap"><span class="th-row">Descrição
+<button class="filtbtn" onclick="togglePanel('painelDescricao')">&#9662;</button></span>
+<div class="filtpanel" id="painelDescricao">
+<input list="descricoesList" id="inputDescricao" placeholder="Digitar descrição (ex: parafuso)" oninput="setFiltroDescricao(this.value)">
+<datalist id="descricoesList"></datalist>
+<button onclick="limparDescricao()">Limpar</button>
+</div>
+</div>
+</th>
+<th id="thMarca"><div class="th-wrap"><span class="th-row">Marca
+<button class="filtbtn" onclick="togglePanel('painelMarca')">&#9662;</button></span>
+<div class="filtpanel" id="painelMarca">
+<input list="marcasList" id="inputMarca" placeholder="Digitar marca" oninput="setFiltroMarca(this.value)">
+<datalist id="marcasList"></datalist>
+<button onclick="limparMarca()">Limpar</button>
+</div>
+</div>
+</th>
+<th><div class="th-wrap"><span class="th-row">Fornecedores
+<button class="filtbtn" id="btnToggleFornecedores" onclick="toggleFornecedores()">+</button></span>
+</div>
+<datalist id="fornecedoresList"></datalist>
+</th>
+<th>Quantidade</th>
+<th>Total</th>
+<th id="thEventEnd"><div class="th-wrap"><span class="th-row">Event End
+<button class="filtbtn" onclick="togglePanel('painelEventEnd')">&#9662;</button></span>
+<div class="filtpanel" id="painelEventEnd">
+<input type="date" id="inputEventEnd" onchange="setFiltroEventEndFromInput(this.value)">
+<button onclick="setFiltroEventEndHoje()">Hoje</button>
+<button onclick="limparEventEnd()">Limpar</button>
+</div>
+</div>
+</th>
+<th id="thDestino"><div class="th-wrap"><span class="th-row">Destino
+<button class="filtbtn" onclick="togglePanel('painelDestino')">&#9662;</button></span>
+<div class="filtpanel" id="painelDestino">
+<input list="destinos" id="inputDestino" placeholder="Digitar destino" oninput="setFiltroDestino(this.value)">
+<button onclick="limparDestino()">Limpar</button>
+</div>
+</div>
+</th>
+<th id="thPrioridade"><div class="th-wrap"><span class="th-row">Prioridade
+<button class="filtbtn" onclick="togglePanel('painelPrioridade')">&#9662;</button></span>
+<div class="filtpanel" id="painelPrioridade">
+<button onclick="setFiltroPrioridade('BAIXA')">Baixa</button>
+<button onclick="setFiltroPrioridade('MÉDIA')">Média</button>
+<button onclick="setFiltroPrioridade('ALTA')">Alta</button>
+<button onclick="setFiltroPrioridade(null)">Limpar</button>
+</div>
+</div>
+</th>
+</tr>
+</thead>
+<tbody id="tb"></tbody>
+</table>
+</div>
+
+<div id="modalCadastro">
+<div class="cadbox">
+<div class="cadbox-head">
+<div class="cadtabs">
+<button id="btnTabFornecedores" onclick="mostrarCadastroTab('fornecedores')">Fornecedores</button>
+<button id="btnTabMarcas" onclick="mostrarCadastroTab('marcas')">Marca</button>
+<button id="btnTabDestinos" onclick="mostrarCadastroTab('destinos')">Destino</button>
+</div>
+<button class="btnFechar" onclick="fecharCadastro()">Fechar</button>
+</div>
+<div id="cadastroConteudo"></div>
+</div>
+</div>
+</div>
+
+<script>
+let dados=JSON.parse(localStorage.getItem('coupaDados')||'[]');
+let cadastroFornecedores=JSON.parse(localStorage.getItem('cadastroFornecedores')||'[]');
+let cadastroMarcas=JSON.parse(localStorage.getItem('cadastroMarcas')||'[]');
+let cadastroDestinos=JSON.parse(localStorage.getItem('cadastroDestinos')||'[]');
+let abaCadastroAtual='fornecedores';
+let editandoFornecedorIdx=-1;
+let editandoMarcaIdx=-1;
+let editandoDestinoIdx=-1;
+let listaSourcing=JSON.parse(localStorage.getItem('coupaSourcingLista')||'[]');
+let totalColagens=Number(localStorage.getItem('coupaSourcingColagens')||'0');
+
+function salvar(){localStorage.setItem('coupaDados',JSON.stringify(dados));atualizarMarcasList();atualizarDescricoesList();atualizarFornecedoresList();atualizarDestinosList();render();}
+function marca(desc){
+ let marcas=['COEL','SCHNEIDER','WEG','ABB','SIEMENS','OMRON','HENNINGS','HAVER BOECKER'];
+ let u=desc.toUpperCase();
+ for(let m of marcas){if(u.includes(m)) return m;}
+ return '';
+}
+function prioridade(d){
+ if(d<=1) return 'CRÍTICA';
+ if(d<=3) return 'ALTA';
+ if(d<=7) return 'MÉDIA';
+ return 'BAIXA';
+}
+function somaDias(d){
+ let x=new Date();
+ x.setDate(x.getDate()+Number(d));
+ return x.toLocaleDateString('pt-BR');
+}
+
+document.getElementById('file').addEventListener('change',e=>{
+ const f=e.target.files[0];
+ const r=new FileReader();
+ r.onload=()=>parseCoupa(r.result);
+ r.readAsText(f,'utf-8');
+});
+
+function parseCoupa(txt){
+ dados=[];
+ let parts=txt.split(/Spot Bid from Req #/).filter(x=>x.trim());
+ parts.forEach(p=>{
+   let ev=(p.match(/Event #(\d+)/)||[])[1];
+   if(!ev) return;
+
+   let d=(p.match(/Event Ends[\s\S]*?(\d+)\s*days[\s\S]*?(\d+)\s*hrs/i)||[]);
+   let dias=d[1]||0;
+
+   let q=(p.match(/Expected Quantity[\s\S]*?(\d+)/i)||[])[1]||'';
+
+   let item=(p.match(/(\d{6,})\s*\|\|\s*([^\n\r]+)/)||[]);
+   let codigo=item[1]||'';
+   let descricao=(item[2]||'').replace(/\|\|/g,' - ').trim();
+
+   dados.push({
+     evento:ev,
+     codigo:codigo,
+     descricao:descricao,
+     marca:marca(descricao),
+     fornecedores:[{nome:'',preco:''},{nome:'',preco:''},{nome:'',preco:''}],
+     quantidade:q,
+     end:somaDias(dias),
+     destino:'',
+     prioridade:prioridade(Number(dias)),
+     selecionado:false
+   });
+ });
+ salvar();
+ alert(dados.length+' eventos importados.');
+}
+
+function processarTextoColado(){
+ let txt=document.getElementById('textoColado').value;
+ if(!txt.trim()){alert('Cole o texto antes de processar.');return;}
+ parseCoupa(txt);
+ document.getElementById('painelColar').style.display='none';
+}
+function limparTextoColado(){
+ document.getElementById('textoColado').value='';
+}
+
+let ordemEvento='original';
+let filtroEvento=null;
+let filtroMarca='';
+let filtroDescricao='';
+let filtroDestino='';
+let filtroEventEnd=null;
+let filtroPrioridade=null;
+
+function togglePanel(id){
+ document.querySelectorAll('.filtpanel').forEach(p=>{if(p.id!==id) p.style.display='none';});
+ let p=document.getElementById(id);
+ p.style.display=(p.style.display==='block')?'none':'block';
+}
+document.addEventListener('click',function(e){
+ if(!e.target.closest('.th-wrap') && !e.target.closest('.pastewrap')){
+   document.querySelectorAll('.filtpanel').forEach(p=>p.style.display='none');
+ }
+});
+
+function setOrdemEvento(v){ordemEvento=v;render();}
+function setFiltroEvento(v){filtroEvento=v;render();}
+
+function setFiltroMarca(v){filtroMarca=v;render();}
+function limparMarca(){filtroMarca='';document.getElementById('inputMarca').value='';render();}
+function atualizarMarcasList(){
+ let marcasDados=dados.map(r=>r.marca);
+ let marcasCadastro=cadastroMarcas.map(m=>m.nome);
+ let marcas=[...new Set([...marcasDados,...marcasCadastro].filter(Boolean))];
+ document.getElementById('marcasList').innerHTML=marcas.map(m=>`<option value="${m}">`).join('');
+}
+
+function setFiltroDescricao(v){filtroDescricao=v;render();}
+function limparDescricao(){filtroDescricao='';document.getElementById('inputDescricao').value='';render();}
+function atualizarDescricoesList(){
+ let descs=[...new Set(dados.map(r=>r.descricao).filter(Boolean))];
+ document.getElementById('descricoesList').innerHTML=descs.map(d=>`<option value="${d}">`).join('');
+}
+
+let fornecedoresExpandido=false;
+function toggleFornecedores(){
+ fornecedoresExpandido=!fornecedoresExpandido;
+ document.getElementById('btnToggleFornecedores').textContent=fornecedoresExpandido?'-':'+';
+ render();
+}
+function atualizarFornecedoresList(){
+ let nomesDados=dados.flatMap(r=>(r.fornecedores||[]).map(f=>f.nome));
+ let nomesCadastro=cadastroFornecedores.map(f=>f.fornecedor);
+ let nomes=[...new Set([...nomesDados,...nomesCadastro].filter(Boolean))];
+ document.getElementById('fornecedoresList').innerHTML=nomes.map(n=>`<option value="${n}">`).join('');
+}
+function formatarPrecoBR(v){
+ let digitos=(v||'').replace(/\D/g,'');
+ if(!digitos) return '';
+ digitos=digitos.replace(/^0+(?=\d)/,'');
+ while(digitos.length<3) digitos='0'+digitos;
+ let inteiro=digitos.slice(0,-2);
+ let centavos=digitos.slice(-2);
+ inteiro=inteiro.replace(/\B(?=(\d{3})+(?!\d))/g,'.');
+ return inteiro+','+centavos;
+}
+function edForn(i,idx,campo,valor){
+ if(!dados[i].fornecedores) dados[i].fornecedores=[{nome:'',preco:''},{nome:'',preco:''},{nome:'',preco:''}];
+ if(campo==='preco') valor=formatarPrecoBR(valor);
+ dados[i].fornecedores[idx][campo]=valor;
+ salvar();
+}
+function calcularTotalNum(r,idx){
+ let f=(r.fornecedores&&r.fornecedores[idx])?r.fornecedores[idx]:{preco:''};
+ let preco=parseFloat((f.preco||'').toString().replace(/\./g,'').replace(',','.'));
+ let qtd=parseFloat((r.quantidade||'').toString().replace(/\./g,'').replace(',','.'));
+ if(isNaN(preco)||isNaN(qtd)) return '';
+ return preco*qtd;
+}
+function calcularTotal(r,idx){
+ let n=calcularTotalNum(r,idx);
+ return n===''?'':n.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+}
+function renderTotalCell(r){
+ let html='';
+ for(let idx=0;idx<3;idx++){
+   let total=calcularTotal(r,idx);
+   html+=`<div class="forn-linha">
+   <span class="forn-label">T${idx+1}</span>
+   <span class="forn-total">${total?('R$ '+total):'-'}</span>
+   </div>`;
+ }
+ return html;
+}
+function renderFornecedoresCell(r,i){
+ let f=r.fornecedores||[{nome:'',preco:''},{nome:'',preco:''},{nome:'',preco:''}];
+ if(!fornecedoresExpandido){
+   let preenchidos=f.filter(x=>x.nome).length;
+   return `<span class="forn-compacto">${preenchidos>0?(preenchidos+' fornecedor(es)'):'-'}</span>`;
+ }
+ let html='';
+ for(let idx=0;idx<3;idx++){
+   let item=f[idx]||{nome:'',preco:''};
+   html+=`<div class="forn-linha">
+   <span class="forn-label">F${idx+1}</span>
+   <input class="forn-nome" list="fornecedoresList" value="${item.nome||''}" onchange="edForn(${i},${idx},'nome',this.value)">
+   <span class="forn-label">P${idx+1}</span>
+   <input class="forn-preco" value="${item.preco||''}" oninput="this.value=formatarPrecoBR(this.value)" onchange="edForn(${i},${idx},'preco',this.value)">
+   </div>`;
+ }
+ return html;
+}
+
+function setFiltroDestino(v){filtroDestino=v;render();}
+function limparDestino(){filtroDestino='';document.getElementById('inputDestino').value='';render();}
+function atualizarDestinosList(){
+ let estaticos=['Vale Itabira MG','Vale Serra ES','Vale Vitória ES','Vale Mariana MG','Nexa Vazante MG'];
+ let destinosDados=dados.map(r=>r.destino).filter(Boolean);
+ let destinosCadastro=cadastroDestinos.map(d=>`${d.empresa||''} ${d.cidade||''} ${d.uf||''}`.trim()).filter(Boolean);
+ let todos=[...new Set([...estaticos,...destinosDados,...destinosCadastro])];
+ document.getElementById('destinos').innerHTML=todos.map(d=>`<option>${d}</option>`).join('');
+}
+
+function setFiltroEventEndFromInput(iso){
+ if(!iso){filtroEventEnd=null;render();return;}
+ let [y,m,d]=iso.split('-');
+ filtroEventEnd=d+'/'+m+'/'+y;
+ render();
+}
+function setFiltroEventEndHoje(){
+ let hoje=new Date();
+ filtroEventEnd=hoje.toLocaleDateString('pt-BR');
+ document.getElementById('inputEventEnd').value=hoje.toISOString().slice(0,10);
+ render();
+}
+function limparEventEnd(){
+ filtroEventEnd=null;
+ document.getElementById('inputEventEnd').value='';
+ render();
+}
+
+function setFiltroPrioridade(v){filtroPrioridade=v;render();}
+
+function getViewData(){
+ let q=(document.getElementById('busca').value||'').toLowerCase();
+ let view=dados.map((r,idx)=>({r:r,idx:idx}));
+ if(q) view=view.filter(o=>JSON.stringify(o.r).toLowerCase().includes(q));
+ if(filtroEvento==='par') view=view.filter(o=>Number(o.r.evento)%2===0);
+ if(filtroEvento==='impar') view=view.filter(o=>Number(o.r.evento)%2!==0);
+ if(filtroMarca) view=view.filter(o=>(o.r.marca||'').toUpperCase().includes(filtroMarca.toUpperCase()));
+ if(filtroDescricao) view=view.filter(o=>(o.r.descricao||'').toUpperCase().includes(filtroDescricao.toUpperCase()));
+ if(filtroDestino) view=view.filter(o=>(o.r.destino||'').toUpperCase().includes(filtroDestino.toUpperCase()));
+ if(filtroEventEnd) view=view.filter(o=>o.r.end===filtroEventEnd);
+ if(filtroPrioridade) view=view.filter(o=>o.r.prioridade===filtroPrioridade);
+ if(ordemEvento==='crescente') view.sort((a,b)=>Number(a.r.evento)-Number(b.r.evento));
+ if(ordemEvento==='decrescente') view.sort((a,b)=>Number(b.r.evento)-Number(a.r.evento));
+ return view;
+}
+
+function render(){
+ let view=getViewData();
+ let h='';
+ view.forEach((o,pos)=>{
+ let r=o.r,i=o.idx;
+ h+=`<tr>
+ <td><input type="checkbox" class="rowchk" ${r.selecionado?'checked':''} onchange="toggleRow(${i},this.checked)"></td>
+ <td>${pos+1}</td>
+ <td>${r.evento}</td>
+ <td>${r.codigo}</td>
+ <td contenteditable style="min-width:220px" onblur="ed(${i},'descricao',this.innerText)">${r.descricao}</td>
+ <td><input list="marcasList" value="${r.marca||''}" onchange="ed(${i},'marca',this.value)"></td>
+ <td>${renderFornecedoresCell(r,i)}</td>
+ <td>${r.quantidade}</td>
+ <td>${renderTotalCell(r)}</td>
+ <td>${r.end}</td>
+ <td><input list="destinos" value="${r.destino||''}" onchange="ed(${i},'destino',this.value)"></td>
+ <td>${r.prioridade}</td>
+ </tr>`;
+ });
+ document.getElementById('tb').innerHTML=h;
+ document.getElementById('selAll').checked=dados.length>0&&dados.every(r=>r.selecionado);
+ atualizarSinalizacaoFiltros();
+}
+function setThFiltro(id,ativo){
+ let el=document.getElementById(id);
+ if(!el) return;
+ if(ativo) el.classList.add('th-filtro-ativo');
+ else el.classList.remove('th-filtro-ativo');
+}
+function atualizarSinalizacaoFiltros(){
+ setThFiltro('thEvento',!!filtroEvento);
+ setThFiltro('thDescricao',!!filtroDescricao);
+ setThFiltro('thMarca',!!filtroMarca);
+ setThFiltro('thEventEnd',!!filtroEventEnd);
+ setThFiltro('thDestino',!!filtroDestino);
+ setThFiltro('thPrioridade',!!filtroPrioridade);
+}
+function abrirCadastro(){
+ document.getElementById('modalCadastro').style.display='flex';
+ mostrarCadastroTab('fornecedores');
+}
+function fecharCadastro(){
+ document.getElementById('modalCadastro').style.display='none';
+}
+function mostrarCadastroTab(tab){
+ abaCadastroAtual=tab;
+ document.getElementById('btnTabFornecedores').classList.toggle('ativo',tab==='fornecedores');
+ document.getElementById('btnTabMarcas').classList.toggle('ativo',tab==='marcas');
+ document.getElementById('btnTabDestinos').classList.toggle('ativo',tab==='destinos');
+ renderCadastro();
+}
+function renderCadastro(){
+ let html='';
+ if(abaCadastroAtual==='fornecedores') html=renderCadastroFornecedores();
+ else if(abaCadastroAtual==='marcas') html=renderCadastroMarcas();
+ else if(abaCadastroAtual==='destinos') html=renderCadastroDestinos();
+ document.getElementById('cadastroConteudo').innerHTML=html;
+}
+function salvarCadastros(){
+ localStorage.setItem('cadastroFornecedores',JSON.stringify(cadastroFornecedores));
+ localStorage.setItem('cadastroMarcas',JSON.stringify(cadastroMarcas));
+ localStorage.setItem('cadastroDestinos',JSON.stringify(cadastroDestinos));
+ atualizarMarcasList();
+ atualizarFornecedoresList();
+ atualizarDestinosList();
+}
+
+function renderCadastroFornecedores(){
+ let linhas='';
+ cadastroFornecedores.forEach((f,idx)=>{
+   if(idx===editandoFornecedorIdx){
+     linhas+=`<tr>
+     <td><input id="cadFornNome${idx}" value="${f.fornecedor||''}"></td>
+     <td><input id="cadFornEmail${idx}" value="${f.email||''}"></td>
+     <td><input id="cadFornFixo${idx}" value="${f.fixo||''}"></td>
+     <td><input id="cadFornCelular${idx}" value="${f.celular||''}"></td>
+     <td><input id="cadFornResp${idx}" value="${f.responsavel||''}"></td>
+     <td></td>
+     <td><button onclick="salvarFornecedor(${idx})">Salvar</button></td>
+     </tr>`;
+   } else {
+     linhas+=`<tr>
+     <td>${f.fornecedor||''}</td>
+     <td>${f.email||''}</td>
+     <td>${f.fixo||''}</td>
+     <td>${f.celular||''}</td>
+     <td>${f.responsavel||''}</td>
+     <td><button onclick="editarFornecedor(${idx})">&#9998;</button></td>
+     <td></td>
+     </tr>`;
+   }
+ });
+ return `<h3>Cadastro de Fornecedores</h3>
+ <button onclick="adicionarFornecedor()">+ Novo Fornecedor</button>
+ <table class="cadtable">
+ <thead><tr><th>Fornecedor</th><th>E-mail</th><th>Fixo</th><th>Celular</th><th>Nome do Responsável</th><th>Editar</th><th>Salvar</th></tr></thead>
+ <tbody>${linhas}</tbody>
+ </table>`;
+}
+function adicionarFornecedor(){
+ cadastroFornecedores.push({fornecedor:'',email:'',fixo:'',celular:'',responsavel:''});
+ editandoFornecedorIdx=cadastroFornecedores.length-1;
+ renderCadastro();
+}
+function editarFornecedor(idx){
+ editandoFornecedorIdx=idx;
+ renderCadastro();
+}
+function salvarFornecedor(idx){
+ cadastroFornecedores[idx]={
+   fornecedor:document.getElementById('cadFornNome'+idx).value,
+   email:document.getElementById('cadFornEmail'+idx).value,
+   fixo:document.getElementById('cadFornFixo'+idx).value,
+   celular:document.getElementById('cadFornCelular'+idx).value,
+   responsavel:document.getElementById('cadFornResp'+idx).value
+ };
+ editandoFornecedorIdx=-1;
+ salvarCadastros();
+ renderCadastro();
+}
+
+function renderCadastroMarcas(){
+ let linhas='';
+ cadastroMarcas.forEach((m,idx)=>{
+   if(idx===editandoMarcaIdx){
+     linhas+=`<tr>
+     <td><input id="cadMarcaNome${idx}" value="${m.nome||''}"></td>
+     <td><input id="cadMarcaSite${idx}" value="${m.site||''}"></td>
+     <td></td>
+     <td><button onclick="salvarMarcaCadastro(${idx})">Salvar</button></td>
+     </tr>`;
+   } else {
+     linhas+=`<tr>
+     <td>${m.nome||''}</td>
+     <td>${m.site||''}</td>
+     <td><button onclick="editarMarcaCadastro(${idx})">&#9998;</button></td>
+     <td></td>
+     </tr>`;
+   }
+ });
+ return `<h3>Cadastro de Marcas</h3>
+ <button onclick="adicionarMarcaCadastro()">+ Nova Marca</button>
+ <table class="cadtable">
+ <thead><tr><th>Nome da Marca</th><th>Site da Marca</th><th>Editar</th><th>Salvar</th></tr></thead>
+ <tbody>${linhas}</tbody>
+ </table>`;
+}
+function adicionarMarcaCadastro(){
+ cadastroMarcas.push({nome:'',site:''});
+ editandoMarcaIdx=cadastroMarcas.length-1;
+ renderCadastro();
+}
+function editarMarcaCadastro(idx){
+ editandoMarcaIdx=idx;
+ renderCadastro();
+}
+function salvarMarcaCadastro(idx){
+ cadastroMarcas[idx]={
+   nome:document.getElementById('cadMarcaNome'+idx).value,
+   site:document.getElementById('cadMarcaSite'+idx).value
+ };
+ editandoMarcaIdx=-1;
+ salvarCadastros();
+ renderCadastro();
+}
+
+function renderCadastroDestinos(){
+ let linhas='';
+ cadastroDestinos.forEach((d,idx)=>{
+   if(idx===editandoDestinoIdx){
+     linhas+=`<tr>
+     <td><input id="cadDestEmpresa${idx}" value="${d.empresa||''}"></td>
+     <td><input id="cadDestCidade${idx}" value="${d.cidade||''}"></td>
+     <td><input id="cadDestUf${idx}" value="${d.uf||''}" maxlength="2"></td>
+     <td></td>
+     <td><button onclick="salvarDestinoCadastro(${idx})">Salvar</button></td>
+     </tr>`;
+   } else {
+     linhas+=`<tr>
+     <td>${d.empresa||''}</td>
+     <td>${d.cidade||''}</td>
+     <td>${d.uf||''}</td>
+     <td><button onclick="editarDestinoCadastro(${idx})">&#9998;</button></td>
+     <td></td>
+     </tr>`;
+   }
+ });
+ return `<h3>Cadastro de Destino</h3>
+ <button onclick="adicionarDestinoCadastro()">+ Novo Destino</button>
+ <table class="cadtable">
+ <thead><tr><th>Nome da Empresa</th><th>Cidade</th><th>ES</th><th>Editar</th><th>Salvar</th></tr></thead>
+ <tbody>${linhas}</tbody>
+ </table>`;
+}
+function adicionarDestinoCadastro(){
+ cadastroDestinos.push({empresa:'',cidade:'',uf:''});
+ editandoDestinoIdx=cadastroDestinos.length-1;
+ renderCadastro();
+}
+function editarDestinoCadastro(idx){
+ editandoDestinoIdx=idx;
+ renderCadastro();
+}
+function salvarDestinoCadastro(idx){
+ cadastroDestinos[idx]={
+   empresa:document.getElementById('cadDestEmpresa'+idx).value,
+   cidade:document.getElementById('cadDestCidade'+idx).value,
+   uf:document.getElementById('cadDestUf'+idx).value
+ };
+ editandoDestinoIdx=-1;
+ salvarCadastros();
+ renderCadastro();
+}
+
+function mostrarStep(n){
+ document.getElementById('step1').classList.toggle('ativo',n===1);
+ document.getElementById('step2').classList.toggle('ativo',n===2);
+ document.getElementById('btnStep1').classList.toggle('ativo',n===1);
+ document.getElementById('btnStep2').classList.toggle('ativo',n===2);
+}
+
+function normalizarUrlSourcing(href){
+ if(!href) return '';
+ if(href.startsWith('http')) return href;
+ if(href.startsWith('//')) return 'https:'+href;
+ if(href.startsWith('/')) return 'https://supplier.coupahost.com'+href;
+ return href;
+}
+function extrairLinkEvento(html,evento){
+ if(!html||!evento) return '';
+ try{
+   let doc=new DOMParser().parseFromString(html,'text/html');
+   let links=[...doc.querySelectorAll('a[href]')];
+   let achado=links.find(a=>(a.getAttribute('href')||'').includes('private_events/'+evento));
+   if(!achado) achado=links.find(a=>a.textContent.trim()===evento);
+   return achado?normalizarUrlSourcing(achado.getAttribute('href')):'';
+ }catch(e){ return ''; }
+}
+function parseListaSourcingTexto(texto,html){
+ let linhas=texto.split('\n').map(l=>l.trim()).filter(l=>l!=='');
+ let indicesEvento=[];
+ linhas.forEach((l,idx)=>{ if(/^\d{4,}$/.test(l)) indicesEvento.push(idx); });
+ let registros=[];
+ for(let k=0;k<indicesEvento.length;k++){
+   let ini=indicesEvento[k];
+   let fim=(k+1<indicesEvento.length)?indicesEvento[k+1]:linhas.length;
+   let bloco=linhas.slice(ini,fim);
+   let evento=bloco[0];
+   let resto=bloco.slice(1);
+   let empresa='',cnpj='',codigo='';
+   if(resto[0]&&resto[0].includes('|')){
+     let partes=resto[0].split('|').map(p=>p.trim());
+     empresa=partes[0]||'';
+     cnpj=partes[1]||'';
+     codigo=partes[2]||'';
+     resto=resto.slice(1);
+   }
+   let requisicao='';
+   let idxReq=resto.findIndex(l=>/Req\s*#\s*(\d+)/i.test(l));
+   if(idxReq>=0){
+     requisicao=(resto[idxReq].match(/Req\s*#\s*(\d+)/i)||[])[1]||'';
+     resto.splice(idxReq,1);
+   }
+   let datas=[];
+   resto=resto.filter(l=>{
+     if(/^\d{2}\/\d{2}\/\d{4}$/.test(l)){ datas.push(l); return false; }
+     return true;
+   });
+   let tipo='';
+   let idxTipo=resto.findIndex(l=>/^(RFQ|RFP|RFI|Auction|Sourcing Event|Spot Bid)$/i.test(l));
+   if(idxTipo>=0){ tipo=resto[idxTipo]; resto.splice(idxTipo,1); }
+   let outras=resto.join(' | ');
+   let url=extrairLinkEvento(html,evento);
+   registros.push({evento:evento,empresa:empresa,cnpj:cnpj,codigo:codigo,requisicao:requisicao,tipo:tipo,dataInicio:datas[0]||'',dataFim:datas[1]||'',outras:outras,url:url,aberto:false,selecionado:false});
+ }
+ return registros;
+}
+function processarColagemSourcing(texto,html){
+ if(!texto||!texto.trim()) return;
+ totalColagens++;
+ localStorage.setItem('coupaSourcingColagens',String(totalColagens));
+ let novos=parseListaSourcingTexto(texto,html);
+ let adicionados=0,duplicados=0;
+ novos.forEach(n=>{
+   if(n.evento && !listaSourcing.some(x=>x.evento===n.evento)){
+     listaSourcing.push(n);
+     adicionados++;
+   } else if(n.evento){
+     duplicados++;
+   }
+ });
+ salvarSourcing();
+ let status=document.getElementById('statusSourcing');
+ if(status){
+   status.textContent=adicionados+' registro(s) adicionado(s)'+(duplicados>0?(' — '+duplicados+' já existente(s) ignorado(s)'):'')+'. Total na lista: '+listaSourcing.length+'. Páginas coladas: '+totalColagens+'.';
+ }
+}
+function salvarSourcing(){
+ localStorage.setItem('coupaSourcingLista',JSON.stringify(listaSourcing));
+ renderSourcing();
+}
+function renderSourcing(){
+ let h='';
+ listaSourcing.forEach((r,i)=>{
+   if(r.processado) return;
+   h+=`<tr class="${r.aberto?'linha-aberta':''}">
+   <td><input type="checkbox" class="chkSourcing" ${r.selecionado?'checked':''} onchange="toggleRowSourcing(${i},this.checked)"></td>
+   <td>${r.url?('<a href="'+r.url+'" target="_blank">'+r.evento+'</a>'):r.evento}</td>
+   <td>${r.empresa||''}</td>
+   <td>${r.cnpj||''}</td>
+   <td>${r.codigo||''}</td>
+   <td>${r.requisicao||''}</td>
+   <td>${r.tipo||''}</td>
+   <td>${r.dataInicio||''}</td>
+   <td>${r.dataFim||''}</td>
+   <td>${r.outras||''}</td>
+   <td><div class="sourcing-colar-linha" contenteditable="true" data-placeholder="Colar cotação..." onpaste="processarPasteLinhaSourcing(event,${i})"></div></td>
+   <td>${r.aberto?'<span class="badge-aberto">Aberto</span>':'<span class="badge-pendente">Pendente</span>'}</td>
+   </tr>`;
+ });
+ document.getElementById('tbSourcing').innerHTML=h;
+ document.getElementById('selAllSourcing').checked=false;
+}
+function toggleRowSourcing(i,v){
+ listaSourcing[i].selecionado=v;
+ salvarSourcing();
+}
+function toggleAllSourcing(cb){
+ if(cb.checked){
+   let pendentes=listaSourcing.filter(r=>!r.aberto);
+   let alvo=pendentes.slice(0,5);
+   if(alvo.length===0){
+     alert('Não há eventos pendentes para selecionar.');
+     cb.checked=false;
+     return;
+   }
+   listaSourcing.forEach(r=>r.selecionado=false);
+   alvo.forEach(r=>r.selecionado=true);
+ } else {
+   listaSourcing.forEach(r=>r.selecionado=false);
+ }
+ salvarSourcing();
+}
+function abrirProximosSourcing(){
+ let selecionados=listaSourcing.filter(r=>r.selecionado);
+ let lote;
+ if(selecionados.length>0){
+   lote=selecionados;
+ } else {
+   let pendentes=listaSourcing.filter(r=>!r.aberto);
+   if(pendentes.length===0){ alert('Todos os eventos já foram abertos.'); return; }
+   lote=pendentes.slice(0,5);
+ }
+ console.log('[DIAG] Lote a abrir:',lote.length,'itens',lote.map(r=>({evento:r.evento,url:r.url})));
+ let bloqueados=0;
+ lote.forEach((r,idx)=>{
+   setTimeout(function(){
+     console.log('[DIAG] Tentando abrir idx='+idx+' evento='+r.evento+' url='+r.url);
+     if(r.url){
+       let janela=window.open(r.url,'_blank');
+       console.log('[DIAG] Resultado window.open idx='+idx+':',janela?'JANELA OK':'BLOQUEADO (null)');
+       if(!janela){ bloqueados++; }
+     } else {
+       console.log('[DIAG] idx='+idx+' NÃO TEM URL, pulando window.open');
+     }
+     r.selecionado=false;
+     salvarSourcing();
+     if(idx===lote.length-1){
+       console.log('[DIAG] Fim do lote. Bloqueados:',bloqueados);
+       if(bloqueados>0){
+         alert(bloqueados+' guia(s) foram bloqueadas pelo navegador. Permita pop-ups para este site (ícone na barra de endereço) e clique novamente em "Abrir próximos 5".');
+       }
+     }
+   }, idx*350);
+ });
+}
+function parseTextoLinhaSourcing(txt){
+ let adicionados=0;
+ let parts=txt.split(/Spot Bid from Req #/).filter(x=>x.trim());
+ parts.forEach(p=>{
+   let ev=(p.match(/Event #(\d+)/)||[])[1];
+   if(!ev) return;
+   if(dados.some(d=>d.evento===ev)) return;
+   let d=(p.match(/Event Ends[\s\S]*?(\d+)\s*days[\s\S]*?(\d+)\s*hrs/i)||[]);
+   let dias=d[1]||0;
+   let q=(p.match(/Expected Quantity[\s\S]*?(\d+)/i)||[])[1]||'';
+   let item=(p.match(/(\d{6,})\s*\|\|\s*([^\n\r]+)/)||[]);
+   let codigo=item[1]||'';
+   let descricao=(item[2]||'').replace(/\|\|/g,' - ').trim();
+   dados.push({
+     evento:ev,
+     codigo:codigo,
+     descricao:descricao,
+     marca:marca(descricao),
+     fornecedores:[{nome:'',preco:''},{nome:'',preco:''},{nome:'',preco:''}],
+     quantidade:q,
+     end:somaDias(dias),
+     destino:'',
+     prioridade:prioridade(Number(dias)),
+     selecionado:false
+   });
+   adicionados++;
+ });
+ return adicionados;
+}
+function confirmarDivergencia(codigoTexto,eventoLinha){
+ return new Promise(resolve=>{
+   let overlay=document.createElement('div');
+   overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:5000;display:flex;align-items:center;justify-content:center';
+   overlay.innerHTML=`<div style="background:#fff;padding:20px;border-radius:8px;max-width:380px;box-shadow:0 8px 24px rgba(0,0,0,.25);font-family:Segoe UI,Arial">
+     <p style="font-size:14px;color:#333;margin:0 0 16px 0">O código do evento colado (${codigoTexto||'não identificado'}) é diferente do evento desta linha (${eventoLinha}). Deseja processar mesmo assim?</p>
+     <div style="display:flex;gap:8px;justify-content:flex-end">
+       <button id="btnConfCancelar" style="padding:8px 14px;border:1px solid #ccc;background:#f2f2f2;border-radius:4px;cursor:pointer">Cancelar</button>
+       <button id="btnConfOk" style="padding:8px 14px;border:none;background:#0b5fff;color:#fff;border-radius:4px;cursor:pointer">OK</button>
+     </div>
+   </div>`;
+   document.body.appendChild(overlay);
+   let btnCancelar=overlay.querySelector('#btnConfCancelar');
+   let btnOk=overlay.querySelector('#btnConfOk');
+   btnCancelar.focus();
+   function fechar(v){document.body.removeChild(overlay);resolve(v);}
+   btnCancelar.onclick=()=>fechar(false);
+   btnOk.onclick=()=>fechar(true);
+   overlay.addEventListener('keydown',function(e){
+     if(e.key==='Enter'){ e.preventDefault(); fechar(document.activeElement===btnOk); }
+     if(e.key==='Escape'){ fechar(false); }
+   });
+ });
+}
+function processarPasteLinhaSourcing(e,i){
+ e.preventDefault();
+ let cd=e.clipboardData||window.clipboardData;
+ let texto=cd.getData('text/plain');
+ if(!texto||!texto.trim()) return;
+ let r=listaSourcing[i];
+ let codigoTexto=(texto.match(/Event #(\d+)/)||[])[1]||null;
+ let precisaConfirmar=!codigoTexto||codigoTexto!==r.evento;
+ let executar=function(){
+   let n=parseTextoLinhaSourcing(texto);
+   salvar();
+   r.textoColado=texto;
+   r.processado=true;
+   r.aberto=true;
+   salvarSourcing();
+   let status=document.getElementById('statusSourcing');
+   if(status) status.textContent=n+' evento(s) processado(s) e adicionado(s) à tabela de cotações (Step 2).';
+ };
+ if(!precisaConfirmar){ executar(); return; }
+ confirmarDivergencia(codigoTexto,r.evento).then(prosseguir=>{
+   if(prosseguir) executar();
+ });
+}
+async function processarInformacoesSourcing(){
+ let comTexto=listaSourcing.filter(r=>r.textoColado&&r.textoColado.trim()&&!r.processado);
+ if(comTexto.length===0){alert('Nenhuma linha tem texto colado pendente de processar.');return;}
+ let total=0;
+ for(const r of comTexto){
+   let codigoTexto=(r.textoColado.match(/Event #(\d+)/)||[])[1]||null;
+   let prosseguir=true;
+   if(!codigoTexto||codigoTexto!==r.evento){
+     prosseguir=await confirmarDivergencia(codigoTexto,r.evento);
+   }
+   if(!prosseguir) continue;
+   total+=parseTextoLinhaSourcing(r.textoColado);
+   r.processado=true;
+   r.aberto=true;
+ }
+ salvar();
+ salvarSourcing();
+ let status=document.getElementById('statusSourcing');
+ if(status) status.textContent=total+' evento(s) processado(s) no total.';
+}
+function limparListaSourcing(){
+ if(listaSourcing.length===0) return;
+ if(!confirm('Limpar toda a lista de Sourcing?')) return;
+ listaSourcing=[];
+ totalColagens=0;
+ localStorage.setItem('coupaSourcingColagens','0');
+ salvarSourcing();
+ let status=document.getElementById('statusSourcing');
+ if(status) status.textContent='';
+}
+document.getElementById('colarSourcing').addEventListener('paste',function(e){
+ e.preventDefault();
+ let cd=e.clipboardData||window.clipboardData;
+ let html=cd.getData('text/html');
+ let texto=cd.getData('text/plain');
+ processarColagemSourcing(texto,html);
+ this.innerHTML='';
+});
+
+function ed(i,c,v){dados[i][c]=v;salvar();}
+function toggleRow(i,v){dados[i].selecionado=v;salvar();}
+function toggleAll(cb){
+ dados.forEach(r=>r.selecionado=cb.checked);
+ salvar();
+}
+function excluirSelecionados(){
+ let n=dados.filter(r=>r.selecionado).length;
+ if(n===0){alert('Nenhuma linha selecionada.');return;}
+ if(!confirm('Excluir '+n+' linha(s) selecionada(s)?')) return;
+ dados=dados.filter(r=>!r.selecionado);
+ salvar();
+}
+document.getElementById('busca').addEventListener('input',render);
+
+function numBR(v){
+ if(v===undefined||v===null||v==='') return '';
+ let n=parseFloat(v.toString().replace(/\./g,'').replace(',','.'));
+ return isNaN(n)?'':n;
+}
+function exportCSV(){
+ let view=getViewData();
+ let header=['Item','Evento','Código','Descrição','Marca','Fornecedor 1','Preço 1','Fornecedor 2','Preço 2','Fornecedor 3','Preço 3','Quantidade','Total 1','Total 2','Total 3','Event End','Destino','Prioridade'];
+ let linhas=[header];
+ view.forEach((o,pos)=>{
+   let r=o.r;
+   let f=r.fornecedores||[{nome:'',preco:''},{nome:'',preco:''},{nome:'',preco:''}];
+   linhas.push([
+     pos+1,
+     r.evento||'',
+     r.codigo||'',
+     r.descricao||'',
+     r.marca||'',
+     (f[0]&&f[0].nome)||'',
+     numBR(f[0]&&f[0].preco),
+     (f[1]&&f[1].nome)||'',
+     numBR(f[1]&&f[1].preco),
+     (f[2]&&f[2].nome)||'',
+     numBR(f[2]&&f[2].preco),
+     numBR(r.quantidade),
+     calcularTotalNum(r,0),
+     calcularTotalNum(r,1),
+     calcularTotalNum(r,2),
+     r.end||'',
+     r.destino||'',
+     r.prioridade||''
+   ]);
+ });
+ let ws=XLSX.utils.aoa_to_sheet(linhas);
+ ws['!cols']=header.map((h,idx)=>idx===3?{wch:55}:{wch:Math.max(12,h.length+2)});
+ ws['!rows']=linhas.map(()=>({hpt:30}));
+ let range=XLSX.utils.decode_range(ws['!ref']);
+ for(let R=range.s.r;R<=range.e.r;R++){
+   let cellRef=XLSX.utils.encode_cell({r:R,c:3});
+   if(ws[cellRef]) ws[cellRef].s={alignment:{wrapText:true,vertical:'top'}};
+ }
+ let wb=XLSX.utils.book_new();
+ XLSX.utils.book_append_sheet(wb,ws,'Cotações');
+ XLSX.writeFile(wb,'coupa_tratado.xlsx',{cellStyles:true});
+}
+atualizarMarcasList();
+atualizarDescricoesList();
+atualizarFornecedoresList();
+atualizarDestinosList();
+renderSourcing();
+if(listaSourcing.length>0){
+ let status=document.getElementById('statusSourcing');
+ if(status) status.textContent='Total na lista: '+listaSourcing.length+'. Páginas coladas: '+totalColagens+'.';
+}
+render();
+</script>
+</body>
+</html>
