@@ -6,13 +6,14 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>CRM Compras Coupa</title>
 <style>
-body{font-family:Segoe UI,Arial;margin:0;background:#f6f8fb}
+body{font-family:Segoe UI,Arial;margin:0;background:#f6f8fb;min-width:1620px}
 .steps-nav{position:sticky;top:0;background:#0b5fff;display:flex;z-index:1200;box-shadow:0 2px 6px rgba(0,0,0,.15)}
 .step-btn{background:transparent;border:none;color:#cfe0ff;padding:14px 22px;cursor:pointer;font-weight:600;font-size:14px}
 .step-btn.ativo{background:#08427a;color:#fff}
 .step-view{display:none}
 .step-view.ativo{display:block}
-.sourcing-wrap{padding:12px}
+#step2.ativo{min-width:1620px;width:100%}
+.sourcing-wrap{padding:12px;overflow-x:auto;min-width:0}
 .sourcing-colar{min-height:30px;background:#fff;border:2px dashed #b7c6e6;border-radius:6px;padding:10px;font-size:13px;color:#555;margin-bottom:10px}
 .sourcing-colar:empty:before{content:attr(data-placeholder);color:#999}
 .sourcing-colar-linha{min-height:20px;min-width:110px;max-width:160px;background:#fff;border:1px dashed #b7c6e6;border-radius:4px;padding:4px 6px;font-size:11px;color:#555}
@@ -24,17 +25,18 @@ body{font-family:Segoe UI,Arial;margin:0;background:#f6f8fb}
 #btnAbrirLote:hover{background:#0847c4}
 #btnLimparSourcing{background:#e74c3c;color:#fff;border:none;border-radius:4px}
 #btnLimparSourcing:hover{background:#c0392b}
-.sourcing-table{width:100%;border-collapse:collapse;background:#fff;font-size:13px}
-.sourcing-table th{border-bottom:2px solid #ddd;padding:10px 8px;text-align:left;background:#fff}
-.sourcing-table td{border-bottom:1px solid #eee;padding:8px}
-.sourcing-table th:nth-child(10),.sourcing-table td:nth-child(10){padding-right:4px}
-.sourcing-table th:nth-child(11),.sourcing-table td:nth-child(11){padding-left:4px}
+.sourcing-table{width:100%;border-collapse:collapse;background:#fff;font-size:13px;min-width:832px;table-layout:fixed}
+.sourcing-table th{border-bottom:2px solid #ddd;padding:8px 4px;text-align:left;background:#fff}
+.sourcing-table td{border-bottom:1px solid #eee;padding:6px 4px}
 .badge-aberto{background:#d4f4dd;color:#1a7a3c;padding:3px 8px;border-radius:10px;font-size:11px;font-weight:600}
 .badge-pendente{background:#f1f1f1;color:#777;padding:3px 8px;border-radius:10px;font-size:11px;font-weight:600}
 tr.linha-aberta{background:#f6fffa}
-nav{position:sticky;top:46px;background:#fff;border-bottom:1px solid #ddd;padding:10px;display:flex;gap:10px;align-items:center;z-index:1000}
-.container{padding:12px}
+nav{position:sticky;top:46px;background:#fff;border-bottom:1px solid #ddd;padding:10px;display:flex;gap:10px;align-items:center;z-index:1000;min-width:1600px;width:100%;box-sizing:border-box}
+.container{padding:12px;overflow-x:auto;min-width:1600px;width:100%;box-sizing:border-box}
 table{width:100%;border-collapse:collapse;background:#fff;font-size:13px}
+#tabStep2{table-layout:fixed;min-width:1570px;width:max-content}
+#tabStep2 td input,#tabStep2 td select{width:100%;box-sizing:border-box;max-width:100%;font-size:11px}
+#tabStep2 td[contenteditable]{font-size:11px}
 thead th{border-bottom:2px solid #ddd;padding:10px 8px;background:#fff;text-align:left}
 tbody td{border-bottom:1px solid #eee;padding:8px}
 tbody tr:hover{background:#f2f6fc}
@@ -57,7 +59,7 @@ button{cursor:pointer}
 .forn-linha{display:flex;gap:4px;align-items:center;margin-bottom:3px}
 .forn-linha:last-child{margin-bottom:0}
 .forn-label{font-size:11px;color:#888;width:16px;flex-shrink:0}
-.forn-nome{width:110px;padding:4px}
+.forn-nome{width:198px;padding:4px;text-transform:uppercase}
 .forn-preco{width:80px;padding:4px}
 .forn-compacto{color:#888;font-size:13px}
 .forn-total{font-size:12px;color:#333;width:90px;display:inline-block}
@@ -90,18 +92,28 @@ button{cursor:pointer}
 <button id="btnProcessarSourcing" onclick="processarInformacoesSourcing()">Processar Informações</button>
 </div>
 <table class="sourcing-table">
+<colgroup>
+<col style="width:28px">
+<col style="width:60px">
+<col style="width:160px">
+<col style="width:120px">
+<col style="width:70px">
+<col style="width:44px">
+<col style="width:80px">
+<col style="width:80px">
+<col style="width:130px">
+<col style="width:60px">
+</colgroup>
 <thead>
 <tr>
 <th><input type="checkbox" id="selAllSourcing" onclick="toggleAllSourcing(this)"></th>
 <th>Evento</th>
 <th>Empresa</th>
 <th>CNPJ</th>
-<th>Código</th>
 <th>Requisição</th>
 <th>Tipo</th>
 <th>Data Início</th>
 <th>Data Fim</th>
-<th>Outras Infos</th>
 <th>Colar Cotação</th>
 <th>Status</th>
 </tr>
@@ -138,7 +150,22 @@ button{cursor:pointer}
 </datalist>
 
 <div class="container">
-<table>
+<table id="tabStep2">
+<colgroup>
+<col style="width:36px"><!-- checkbox -->
+<col style="width:46px"><!-- item -->
+<col style="width:80px"><!-- evento -->
+<col style="width:90px"><!-- ncm -->
+<col style="width:90px"><!-- código -->
+<col style="width:260px"><!-- descrição -->
+<col style="width:216px"><!-- marca 1.8x -->
+<col style="width:320px"><!-- fornecedores -->
+<col style="width:80px"><!-- quantidade -->
+<col style="width:110px"><!-- total -->
+<col style="width:90px"><!-- event end -->
+<col style="width:150px"><!-- destino -->
+<col style="width:80px"><!-- prioridade -->
+</colgroup>
 <thead>
 <tr>
 <th><input type="checkbox" id="selAll" onclick="toggleAll(this)"></th>
@@ -156,8 +183,9 @@ button{cursor:pointer}
 </div>
 </div>
 </th>
+<th>NCM</th>
 <th>Código</th>
-<th id="thDescricao" style="min-width:220px"><div class="th-wrap"><span class="th-row">Descrição
+<th id="thDescricao"><div class="th-wrap"><span class="th-row">Descrição
 <button class="filtbtn" onclick="togglePanel('painelDescricao')">&#9662;</button></span>
 <div class="filtpanel" id="painelDescricao">
 <input list="descricoesList" id="inputDescricao" placeholder="Digitar descrição (ex: parafuso)" oninput="setFiltroDescricao(this.value)">
@@ -243,6 +271,9 @@ let listaSourcing=JSON.parse(localStorage.getItem('coupaSourcingLista')||'[]');
 let totalColagens=Number(localStorage.getItem('coupaSourcingColagens')||'0');
 
 function salvar(){localStorage.setItem('coupaDados',JSON.stringify(dados));atualizarMarcasList();atualizarDescricoesList();atualizarFornecedoresList();atualizarDestinosList();render();}
+function removerAcentos(str){
+ return (str||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+}
 function marca(desc){
  let marcas=['COEL','SCHNEIDER','WEG','ABB','SIEMENS','OMRON','HENNINGS','HAVER BOECKER'];
  let u=desc.toUpperCase();
@@ -278,27 +309,79 @@ function parseCoupa(txt){
    let d=(p.match(/Event Ends[\s\S]*?(\d+)\s*days[\s\S]*?(\d+)\s*hrs/i)||[]);
    let dias=d[1]||0;
 
-   let q=(p.match(/Expected Quantity[\s\S]*?(\d+)/i)||[])[1]||'';
+   // Segmenta o texto do evento em blocos por item: do código até o próximo código (ou fim)
+   let itemMatches=[...p.matchAll(/(\d{6,})\s*\|\|\s*([^\n\r]+)/g)];
+   let itemSegments=[];
+   for(let k=0;k<itemMatches.length;k++){
+     let start=itemMatches[k].index;
+     let end=(k+1<itemMatches.length)?itemMatches[k+1].index:p.length;
+     itemSegments.push({codigo:itemMatches[k][1], headerRaw:itemMatches[k][2], segmento:p.slice(start,end)});
+   }
+   if(itemSegments.length===0){
+     itemSegments.push({codigo:'', headerRaw:'', segmento:p});
+   }
 
-   let item=(p.match(/(\d{6,})\s*\|\|\s*([^\n\r]+)/)||[]);
-   let codigo=item[1]||'';
-   let descricao=(item[2]||'').replace(/\|\|/g,' - ').trim();
+   itemSegments.forEach(item=>{
+     let seg=item.segmento;
 
-   dados.push({
-     evento:ev,
-     codigo:codigo,
-     descricao:descricao,
-     marca:marca(descricao),
-     fornecedores:[{nome:'',preco:''},{nome:'',preco:''},{nome:'',preco:''}],
-     quantidade:q,
-     end:somaDias(dias),
-     destino:'',
-     prioridade:prioridade(Number(dias)),
-     selecionado:false
+     // Destino: "Local de entrega:" dentro do segmento do item (fallback: evento inteiro)
+     let destino='';
+     let detailsM=(seg.match(/Local de entrega\s*:\s*([^\n]+)/i)||p.match(/Local de entrega\s*:\s*([^\n]+)/i));
+     if(detailsM){
+       let raw=detailsM[1].trim();
+       let partes=raw.split('-').map(s=>s.trim()).filter(Boolean);
+       let brIdx=partes.findIndex(s=>s==='BR');
+       if(brIdx>=2){
+         destino=(partes[brIdx-2]+' '+partes[brIdx-1]).trim();
+       } else {
+         destino=raw.split(':')[0].trim();
+       }
+     }
+
+     // NCM: dentro do segmento do item (sem pontos)
+     let ncmRaw=(seg.match(/NCM[\s\S]*?([\d]{4}\.[\d]{2}\.[\d]{2}|[\d]{8})/)||[])[1]||'';
+     let ncm=ncmRaw.replace(/\./g,'');
+
+     // Descrição: busca direta "PT ||" no segmento, parando em asteriscos, "Manufacturer Name" OU "Need By Date"
+     let descricao='';
+     let fabricante='';
+     let ptM=seg.match(/PT\s*\|\|([\s\S]*?)(?=\*{5,}|Manufacturer Name|Need By Date|$)/i);
+     if(ptM){
+       let ptTexto=ptM[1].trim();
+       // Extrai a referência completa (marca + código, ex: "HOLMATRO / PCU60CL") — pega apenas a primeira referência antes de ";"
+       let fabM=ptTexto.match(/FABRICANTE\/REFERENCIA\s*:\s*([^;\n\r]+)/i);
+       if(fabM){
+         fabricante=fabM[1].trim();
+       }
+       // Descrição mantém o texto completo, incluindo FABRICANTE/REFERENCIA (informação essencial para localizar a peça)
+       descricao=ptTexto.replace(/;\s*$/,'').trim();
+     }
+     if(!descricao) descricao=(item.headerRaw||'').replace(/\|\|/g,' - ').trim();
+
+     // Quantidade: Capacity preferido, senão Expected Quantity — dentro do segmento
+     let quantidade=(seg.match(/Capacity\s*\n?\s*(\d+)/i)||[])[1] || (seg.match(/Expected Quantity[\s\S]*?(\d+)/i)||[])[1] || '';
+
+     // Marca: prioriza o fabricante extraído de FABRICANTE/REFERENCIA; fallback heurístico
+     let marcaFinal = fabricante || marca(descricao);
+
+     dados.push({
+       evento:ev,
+       ncm:ncm,
+       codigo:item.codigo.toUpperCase(),
+       descricao:descricao.toUpperCase(),
+       fabricante:fabricante.toUpperCase(),
+       marca:marcaFinal.toUpperCase(),
+       fornecedores:[{nome:'',preco:''},{nome:'',preco:''},{nome:'',preco:''}],
+       quantidade:quantidade,
+       end:somaDias(dias),
+       destino:removerAcentos(destino).toUpperCase(),
+       prioridade:prioridade(Number(dias)),
+       selecionado:false
+     });
    });
  });
  salvar();
- alert(dados.length+' eventos importados.');
+ alert(dados.length+' item(ns) importado(s).');
 }
 
 function processarTextoColado(){
@@ -473,15 +556,16 @@ function render(){
  <td><input type="checkbox" class="rowchk" ${r.selecionado?'checked':''} onchange="toggleRow(${i},this.checked)"></td>
  <td>${pos+1}</td>
  <td>${r.evento}</td>
+ <td>${r.ncm||''}</td>
  <td>${r.codigo}</td>
- <td contenteditable style="min-width:220px" onblur="ed(${i},'descricao',this.innerText)">${r.descricao}</td>
- <td><input list="marcasList" value="${r.marca||''}" onchange="ed(${i},'marca',this.value)"></td>
+ <td contenteditable style="height:auto;white-space:normal;word-break:break-word;overflow-wrap:break-word;text-transform:uppercase" onblur="ed(${i},'descricao',this.innerText)">${r.descricao}</td>
+ <td><input list="marcasList" value="${r.marca||''}" style="text-transform:uppercase" onchange="ed(${i},'marca',this.value)"></td>
  <td>${renderFornecedoresCell(r,i)}</td>
  <td>${r.quantidade}</td>
  <td>${renderTotalCell(r)}</td>
  <td>${r.end}</td>
- <td><input list="destinos" value="${r.destino||''}" onchange="ed(${i},'destino',this.value)"></td>
- <td>${r.prioridade}</td>
+ <td><input list="destinos" value="${r.destino||''}" style="text-transform:uppercase" onchange="ed(${i},'destino',removerAcentos(this.value))"></td>
+ <td style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.prioridade}</td>
  </tr>`;
  });
  document.getElementById('tb').innerHTML=h;
@@ -775,12 +859,10 @@ function renderSourcing(){
    <td>${r.url?('<a href="'+r.url+'" target="_blank">'+r.evento+'</a>'):r.evento}</td>
    <td>${r.empresa||''}</td>
    <td>${r.cnpj||''}</td>
-   <td>${r.codigo||''}</td>
    <td>${r.requisicao||''}</td>
    <td>${r.tipo||''}</td>
    <td>${r.dataInicio||''}</td>
    <td>${r.dataFim||''}</td>
-   <td>${r.outras||''}</td>
    <td><div class="sourcing-colar-linha" contenteditable="true" data-placeholder="Colar cotação..." onpaste="processarPasteLinhaSourcing(event,${i})"></div></td>
    <td>${r.aberto?'<span class="badge-aberto">Aberto</span>':'<span class="badge-pendente">Pendente</span>'}</td>
    </tr>`;
@@ -847,26 +929,92 @@ function parseTextoLinhaSourcing(txt){
  parts.forEach(p=>{
    let ev=(p.match(/Event #(\d+)/)||[])[1];
    if(!ev) return;
-   if(dados.some(d=>d.evento===ev)) return;
+
    let d=(p.match(/Event Ends[\s\S]*?(\d+)\s*days[\s\S]*?(\d+)\s*hrs/i)||[]);
    let dias=d[1]||0;
-   let q=(p.match(/Expected Quantity[\s\S]*?(\d+)/i)||[])[1]||'';
-   let item=(p.match(/(\d{6,})\s*\|\|\s*([^\n\r]+)/)||[]);
-   let codigo=item[1]||'';
-   let descricao=(item[2]||'').replace(/\|\|/g,' - ').trim();
-   dados.push({
-     evento:ev,
-     codigo:codigo,
-     descricao:descricao,
-     marca:marca(descricao),
-     fornecedores:[{nome:'',preco:''},{nome:'',preco:''},{nome:'',preco:''}],
-     quantidade:q,
-     end:somaDias(dias),
-     destino:'',
-     prioridade:prioridade(Number(dias)),
-     selecionado:false
+
+   // Destino
+   let destino='';
+   let detailsM=p.match(/Details[\s\S]*?Local de entrega\s*:\s*([^\n]+)/i);
+   if(detailsM){
+     let raw=detailsM[1].trim();
+     let partes=raw.split('-').map(s=>s.trim()).filter(Boolean);
+     let brIdx=partes.findIndex(s=>s==='BR');
+     if(brIdx>=2){ destino=(partes[brIdx-2]+' '+partes[brIdx-1]).trim(); }
+     else { destino=raw.split(':')[0].trim(); }
+   }
+
+   // NCM sem pontos
+   let ncmRaw=(p.match(/NCM[\s\S]*?([\d]{4}\.[\d]{2}\.[\d]{2}|[\d]{8})/)||[])[1]||'';
+   let ncm=ncmRaw.replace(/\./g,'');
+
+   // Segmenta o texto do evento em blocos por item
+   let itemMatches=[...p.matchAll(/(\d{6,})\s*\|\|\s*([^\n\r]+)/g)];
+   let itemSegments=[];
+   for(let k=0;k<itemMatches.length;k++){
+     let start=itemMatches[k].index;
+     let end=(k+1<itemMatches.length)?itemMatches[k+1].index:p.length;
+     itemSegments.push({codigo:itemMatches[k][1], headerRaw:itemMatches[k][2], segmento:p.slice(start,end)});
+   }
+   if(itemSegments.length===0){
+     itemSegments.push({codigo:'', headerRaw:'', segmento:p});
+   }
+
+   itemSegments.forEach((item,iIdx)=>{
+     // Pula se já existir na tabela (apenas para 1º item do evento)
+     if(iIdx===0 && dados.some(d=>d.evento===ev&&d.codigo===item.codigo)) return;
+
+     let seg=item.segmento;
+
+     // Destino: dentro do segmento do item (fallback: evento inteiro)
+     let destinoItem=destino;
+     let detailsSegM=seg.match(/Local de entrega\s*:\s*([^\n]+)/i);
+     if(detailsSegM){
+       let raw=detailsSegM[1].trim();
+       let partes=raw.split('-').map(s=>s.trim()).filter(Boolean);
+       let brIdx=partes.findIndex(s=>s==='BR');
+       if(brIdx>=2){ destinoItem=(partes[brIdx-2]+' '+partes[brIdx-1]).trim(); }
+       else { destinoItem=raw.split(':')[0].trim(); }
+     }
+
+     // NCM dentro do segmento do item (fallback: evento inteiro)
+     let ncmSegRaw=(seg.match(/NCM[\s\S]*?([\d]{4}\.[\d]{2}\.[\d]{2}|[\d]{8})/)||[])[1]||'';
+     let ncmItem=ncmSegRaw?ncmSegRaw.replace(/\./g,''):ncm;
+
+     // Descrição: busca direta "PT ||" no segmento, parando em asteriscos, "Manufacturer Name" OU "Need By Date"
+     let descricao='';
+     let fabricante='';
+     let ptM=seg.match(/PT\s*\|\|([\s\S]*?)(?=\*{5,}|Manufacturer Name|Need By Date|$)/i);
+     if(ptM){
+       let ptTexto=ptM[1].trim();
+       let fabM=ptTexto.match(/FABRICANTE\/REFERENCIA\s*:\s*([^;\n\r]+)/i);
+       if(fabM){ fabricante=fabM[1].trim(); }
+       descricao=ptTexto.replace(/;\s*$/,'').trim();
+     }
+     if(!descricao) descricao=(item.headerRaw||'').replace(/\|\|/g,' - ').trim();
+
+     // Quantidade: dentro do segmento do item
+     let quantidade=(seg.match(/Capacity\s*\n?\s*(\d+)/i)||[])[1] || (seg.match(/Expected Quantity[\s\S]*?(\d+)/i)||[])[1] || '';
+
+     // Marca: prioriza fabricante extraído; fallback heurístico
+     let marcaFinal = fabricante || marca(descricao);
+
+     dados.push({
+       evento:ev,
+       ncm:ncmItem,
+       codigo:item.codigo.toUpperCase(),
+       descricao:descricao.toUpperCase(),
+       fabricante:fabricante.toUpperCase(),
+       marca:marcaFinal.toUpperCase(),
+       fornecedores:[{nome:'',preco:''},{nome:'',preco:''},{nome:'',preco:''}],
+       quantidade:quantidade,
+       end:somaDias(dias),
+       destino:removerAcentos(destinoItem).toUpperCase(),
+       prioridade:prioridade(Number(dias)),
+       selecionado:false
+     });
+     adicionados++;
    });
-   adicionados++;
  });
  return adicionados;
 }
@@ -956,7 +1104,7 @@ document.getElementById('colarSourcing').addEventListener('paste',function(e){
  this.innerHTML='';
 });
 
-function ed(i,c,v){dados[i][c]=v;salvar();}
+function ed(i,c,v){dados[i][c]=(typeof v==='string'?v.toUpperCase():v);salvar();}
 function toggleRow(i,v){dados[i].selecionado=v;salvar();}
 function toggleAll(cb){
  dados.forEach(r=>r.selecionado=cb.checked);
@@ -978,7 +1126,7 @@ function numBR(v){
 }
 function exportCSV(){
  let view=getViewData();
- let header=['Item','Evento','Código','Descrição','Marca','Fornecedor 1','Preço 1','Fornecedor 2','Preço 2','Fornecedor 3','Preço 3','Quantidade','Total 1','Total 2','Total 3','Event End','Destino','Prioridade'];
+ let header=['Item','Evento','NCM','Fabricante','Código','Descrição','Marca','Fornecedor 1','Preço 1','Fornecedor 2','Preço 2','Fornecedor 3','Preço 3','Quantidade','Total 1','Total 2','Total 3','Event End','Destino','Prioridade'];
  let linhas=[header];
  view.forEach((o,pos)=>{
    let r=o.r;
@@ -986,6 +1134,8 @@ function exportCSV(){
    linhas.push([
      pos+1,
      r.evento||'',
+     r.ncm||'',
+     r.fabricante||'',
      r.codigo||'',
      r.descricao||'',
      r.marca||'',
@@ -1005,11 +1155,11 @@ function exportCSV(){
    ]);
  });
  let ws=XLSX.utils.aoa_to_sheet(linhas);
- ws['!cols']=header.map((h,idx)=>idx===3?{wch:55}:{wch:Math.max(12,h.length+2)});
+ ws['!cols']=header.map((h,idx)=>idx===5?{wch:55}:{wch:Math.max(12,h.length+2)});
  ws['!rows']=linhas.map(()=>({hpt:30}));
  let range=XLSX.utils.decode_range(ws['!ref']);
  for(let R=range.s.r;R<=range.e.r;R++){
-   let cellRef=XLSX.utils.encode_cell({r:R,c:3});
+   let cellRef=XLSX.utils.encode_cell({r:R,c:5});
    if(ws[cellRef]) ws[cellRef].s={alignment:{wrapText:true,vertical:'top'}};
  }
  let wb=XLSX.utils.book_new();
