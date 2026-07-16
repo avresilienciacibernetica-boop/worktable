@@ -409,7 +409,7 @@ function parseCoupa(txt){
        marca:marcaFinal.toUpperCase(),
        fornecedores:[{nome:'',preco:''},{nome:'',preco:''},{nome:'',preco:''}],
        quantidade:quantidade,
-       end_date:somaDias(dias),
+       end:somaDias(dias),
        destino:removerAcentos(destino).toUpperCase(),
        prioridade:prioridade(Number(dias)),
        selecionado:false
@@ -576,7 +576,7 @@ function getViewData(){
  if(filtroMarca) view=view.filter(o=>(o.r.marca||'').toUpperCase().includes(filtroMarca.toUpperCase()));
  if(filtroDescricao) view=view.filter(o=>(o.r.descricao||'').toUpperCase().includes(filtroDescricao.toUpperCase()));
  if(filtroDestino) view=view.filter(o=>(o.r.destino||'').toUpperCase().includes(filtroDestino.toUpperCase()));
- if(filtroEventEnd) view=view.filter(o=>o.r.end_date===filtroEventEnd);
+ if(filtroEventEnd) view=view.filter(o=>o.r.end===filtroEventEnd);
  if(filtroPrioridade) view=view.filter(o=>o.r.prioridade===filtroPrioridade);
  if(ordemEvento==='crescente') view.sort((a,b)=>Number(a.r.evento)-Number(b.r.evento));
  if(ordemEvento==='decrescente') view.sort((a,b)=>Number(b.r.evento)-Number(a.r.evento));
@@ -599,7 +599,7 @@ function render(){
  <td>${renderFornecedoresCell(r,i)}</td>
  <td>${r.quantidade}</td>
  <td>${renderTotalCell(r)}</td>
- <td>${r.end_date}</td>
+ <td>${r.end}</td>
  <td><input list="destinos" value="${r.destino||''}" style="text-transform:uppercase" onchange="ed(${i},'destino',removerAcentos(this.value))"></td>
  <td style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.prioridade}</td>
  </tr>`;
@@ -1050,7 +1050,7 @@ function parseTextoLinhaSourcing(txt){
        marca:marcaFinal.toUpperCase(),
        fornecedores:[{nome:'',preco:''},{nome:'',preco:''},{nome:'',preco:''}],
        quantidade:quantidade,
-       end_date:somaDias(dias),
+       end:somaDias(dias),
        destino:removerAcentos(destinoItem).toUpperCase(),
        prioridade:prioridade(Number(dias)),
        selecionado:false
@@ -1191,7 +1191,7 @@ function exportCSV(){
      calcularTotalNum(r,0),
      calcularTotalNum(r,1),
      calcularTotalNum(r,2),
-     r.end_date||'',
+     r.end||'',
      r.destino||'',
      r.prioridade||''
    ]);
