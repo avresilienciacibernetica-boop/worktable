@@ -335,7 +335,7 @@ document.getElementById('file').addEventListener('change',e=>{
  r.readAsText(f,'utf-8');
 });
 
-function parseCoupa(txt){
+async function parseCoupa(txt){
  dados=[];
  let parts=txt.split(/Spot Bid from Req #/).filter(x=>x.trim());
  parts.forEach(p=>{
@@ -416,11 +416,11 @@ function parseCoupa(txt){
      });
    });
  });
- salvar();
+ await salvar();
  alert(dados.length+' item(ns) importado(s).');
 }
 
-function processarTextoColado(){
+async function processarTextoColado(){
  let txt=document.getElementById('textoColado').value;
  if(!txt.trim()){alert('Cole o texto antes de processar.');return;}
  parseCoupa(txt);
@@ -490,13 +490,13 @@ function formatarPrecoBR(v){
  inteiro=inteiro.replace(/\B(?=(\d{3})+(?!\d))/g,'.');
  return inteiro+','+centavos;
 }
-function edForn(i,idx,campo,valor){
+async function edForn(i,idx,campo,valor){
  if(!dados[i].fornecedores) dados[i].fornecedores=[{nome:'',preco:''},{nome:'',preco:''},{nome:'',preco:''}];
  if(campo==='preco') valor=formatarPrecoBR(valor);
  dados[i].fornecedores[idx][campo]=valor;
- salvar();
+ await salvar();
 }
-function calcularTotalNum(r,idx){
+async function calcularTotalNum(r,idx){
  let f=(r.fornecedores&&r.fornecedores[idx])?r.fornecedores[idx]:{preco:''};
  let preco=parseFloat((f.preco||'').toString().replace(/\./g,'').replace(',','.'));
  let qtd=parseFloat((r.quantidade||'').toString().replace(/\./g,'').replace(',','.'));
@@ -1092,13 +1092,13 @@ function processarPasteLinhaSourcing(e,i){
  let r=listaSourcing[i];
  let codigoTexto=(texto.match(/Event #(\d+)/)||[])[1]||null;
  let precisaConfirmar=!codigoTexto||codigoTexto!==r.evento;
- let executar=function(){
+ let executar=async function(){
    let n=parseTextoLinhaSourcing(texto);
-   salvar();
+   await salvar();
    r.textoColado=texto;
    r.processado=true;
    r.aberto=true;
-   salvarSourcing();
+   await salvarSourcing();
    let status=document.getElementById('statusSourcing');
    if(status) status.textContent=n+' evento(s) processado(s) e adicionado(s) à tabela de cotações (Step 2).';
  };
@@ -1122,8 +1122,8 @@ async function processarInformacoesSourcing(){
    r.processado=true;
    r.aberto=true;
  }
- salvar();
- salvarSourcing();
+ await salvar();
+ await salvarSourcing();
  let status=document.getElementById('statusSourcing');
  if(status) status.textContent=total+' evento(s) processado(s) no total.';
 }
@@ -1146,18 +1146,18 @@ document.getElementById('colarSourcing').addEventListener('paste',function(e){
  this.innerHTML='';
 });
 
-function ed(i,c,v){dados[i][c]=(typeof v==='string'?v.toUpperCase():v);salvar();}
-function toggleRow(i,v){dados[i].selecionado=v;salvar();}
-function toggleAll(cb){
+async function ed(i,c,v){dados[i][c]=(typeof v==='string'?v.toUpperCase():v);await salvar();}
+async function toggleRow(i,v){dados[i].selecionado=v;await salvar();}
+async function toggleAll(cb){
  dados.forEach(r=>r.selecionado=cb.checked);
- salvar();
+ await salvar();
 }
-function excluirSelecionados(){
+async function excluirSelecionados(){
  let n=dados.filter(r=>r.selecionado).length;
  if(n===0){alert('Nenhuma linha selecionada.');return;}
  if(!confirm('Excluir '+n+' linha(s) selecionada(s)?')) return;
  dados=dados.filter(r=>!r.selecionado);
- salvar();
+ await salvar();
 }
 document.getElementById('busca').addEventListener('input',render);
 
