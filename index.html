@@ -1,7 +1,9 @@
+
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>CRM Compras Coupa</title>
@@ -34,7 +36,7 @@ tr.linha-aberta{background:#f6fffa}
 nav{position:sticky;top:46px;background:#fff;border-bottom:1px solid #ddd;padding:10px;display:flex;gap:10px;align-items:center;z-index:1000;min-width:1600px;width:100%;box-sizing:border-box}
 .container{padding:12px;overflow-x:auto;min-width:1600px;width:100%;box-sizing:border-box}
 table{width:100%;border-collapse:collapse;background:#fff;font-size:13px}
-#tabStep2{table-layout:fixed;min-width:1570px;width:max-content}
+#tabStep2{table-layout:fixed;min-width:1470px;width:max-content}
 #tabStep2 td input,#tabStep2 td select{width:100%;box-sizing:border-box;max-width:100%;font-size:11px}
 #tabStep2 td[contenteditable]{font-size:11px}
 thead th{border-bottom:2px solid #ddd;padding:10px 8px;background:#fff;text-align:left}
@@ -59,7 +61,7 @@ button{cursor:pointer}
 .forn-linha{display:flex;gap:4px;align-items:center;margin-bottom:3px}
 .forn-linha:last-child{margin-bottom:0}
 .forn-label{font-size:11px;color:#888;width:16px;flex-shrink:0}
-.forn-nome{width:198px;padding:4px;text-transform:uppercase}
+.forn-nome{width:110px;padding:4px}
 .forn-preco{width:80px;padding:4px}
 .forn-compacto{color:#888;font-size:13px}
 .forn-total{font-size:12px;color:#333;width:90px;display:inline-block}
@@ -159,7 +161,7 @@ button{cursor:pointer}
 <col style="width:90px"><!-- código -->
 <col style="width:260px"><!-- descrição -->
 <col style="width:216px"><!-- marca 1.8x -->
-<col style="width:320px"><!-- fornecedores -->
+<col style="width:220px"><!-- fornecedores -->
 <col style="width:80px"><!-- quantidade -->
 <col style="width:110px"><!-- total -->
 <col style="width:90px"><!-- event end -->
@@ -259,18 +261,52 @@ button{cursor:pointer}
 </div>
 
 <script>
-let dados=JSON.parse(localStorage.getItem('coupaDados')||'[]');
-let cadastroFornecedores=JSON.parse(localStorage.getItem('cadastroFornecedores')||'[]');
-let cadastroMarcas=JSON.parse(localStorage.getItem('cadastroMarcas')||'[]');
-let cadastroDestinos=JSON.parse(localStorage.getItem('cadastroDestinos')||'[]');
+const SUPA_URL='https://vqhxrbuwhanjzcgyvkzy.supabase.co';
+const SUPA_KEY='sb_publishable_Ky8s-Zb8YJ6NgQEnivZsCA_McgsXogt';
+const _supa=supabase.createClient(SUPA_URL,SUPA_KEY);
+
+let dados=[];
+let cadastroFornecedores=[];
+let cadastroMarcas=[];
+let cadastroDestinos=[];
 let abaCadastroAtual='fornecedores';
 let editandoFornecedorIdx=-1;
 let editandoMarcaIdx=-1;
 let editandoDestinoIdx=-1;
-let listaSourcing=JSON.parse(localStorage.getItem('coupaSourcingLista')||'[]');
-let totalColagens=Number(localStorage.getItem('coupaSourcingColagens')||'0');
+let listaSourcing=[];
+let totalColagens=0;
 
-function salvar(){localStorage.setItem('coupaDados',JSON.stringify(dados));atualizarMarcasList();atualizarDescricoesList();atualizarFornecedoresList();atualizarDestinosList();render();}
+async function carregarDados(){
+  const {data}=await _supa.from('crm_dados').select('*').order('created_at',{ascending:true});
+  if(data) dados=data;
+  atualizarMarcasList();atualizarDescricoesList();atualizarFornecedoresList();atualizarDestinosList();render();
+}
+async function carregarCadastros(){
+  const [f,m,d]=await Promise.all([
+    _supa.from('crm_cadastro_fornecedores').select('*').order('nome',{ascending:true}),
+    _supa.from('crm_cadastro_marcas').select('*').order('nome',{ascending:true}),
+    _supa.from('crm_cadastro_destinos').select('*').order('nome',{ascending:true})
+  ]);
+  if(f.data) cadastroFornecedores=f.data.map(r=>r.nome);
+  if(m.data) cadastroMarcas=m.data.map(r=>r.nome);
+  if(d.data) cadastroDestinos=d.data.map(r=>r.nome);
+}
+async function carregarSourcing(){
+  const {data}=await _supa.from('crm_sourcing').select('*').order('created_at',{ascending:true});
+  if(data){
+    listaSourcing=data.map(r=>({...r.payload,_id:r.id}));
+    totalColagens=data.length>0?data[data.length-1].total_colagens||0:0;
+  }
+  renderSourcing();
+}
+async function inicializar(){
+  await Promise.all([carregarCadastros(),carregarDados(),carregarSourcing()]);
+}
+
+async function salvar(){
+  await _supa.from('crm_dados').upsert(dados,{onConflict:'id'});
+  atualizarMarcasList();atualizarDescricoesList();atualizarFornecedoresList();atualizarDestinosList();render();
+}
 function removerAcentos(str){
  return (str||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'');
 }
@@ -607,13 +643,16 @@ function renderCadastro(){
  else if(abaCadastroAtual==='destinos') html=renderCadastroDestinos();
  document.getElementById('cadastroConteudo').innerHTML=html;
 }
-function salvarCadastros(){
- localStorage.setItem('cadastroFornecedores',JSON.stringify(cadastroFornecedores));
- localStorage.setItem('cadastroMarcas',JSON.stringify(cadastroMarcas));
- localStorage.setItem('cadastroDestinos',JSON.stringify(cadastroDestinos));
- atualizarMarcasList();
- atualizarFornecedoresList();
- atualizarDestinosList();
+async function salvarCadastros(){
+  await _supa.from('crm_cadastro_fornecedores').delete().neq('id',0);
+  await _supa.from('crm_cadastro_marcas').delete().neq('id',0);
+  await _supa.from('crm_cadastro_destinos').delete().neq('id',0);
+  if(cadastroFornecedores.length) await _supa.from('crm_cadastro_fornecedores').insert(cadastroFornecedores.map(n=>({nome:n})));
+  if(cadastroMarcas.length) await _supa.from('crm_cadastro_marcas').insert(cadastroMarcas.map(n=>({nome:n})));
+  if(cadastroDestinos.length) await _supa.from('crm_cadastro_destinos').insert(cadastroDestinos.map(n=>({nome:n})));
+  atualizarMarcasList();
+  atualizarFornecedoresList();
+  atualizarDestinosList();
 }
 
 function renderCadastroFornecedores(){
@@ -826,28 +865,31 @@ function parseListaSourcingTexto(texto,html){
  }
  return registros;
 }
-function processarColagemSourcing(texto,html){
+async function processarColagemSourcing(texto,html){
  if(!texto||!texto.trim()) return;
  totalColagens++;
- localStorage.setItem('coupaSourcingColagens',String(totalColagens));
  let novos=parseListaSourcingTexto(texto,html);
  let adicionados=0,duplicados=0;
- novos.forEach(n=>{
+ for(const n of novos){
    if(n.evento && !listaSourcing.some(x=>x.evento===n.evento)){
-     listaSourcing.push(n);
+     const {data}=await _supa.from('crm_sourcing').insert({payload:n,total_colagens:totalColagens}).select().single();
+     if(data){listaSourcing.push({...n,_id:data.id});}
      adicionados++;
    } else if(n.evento){
      duplicados++;
    }
- });
- salvarSourcing();
+ }
+ renderSourcing();
  let status=document.getElementById('statusSourcing');
  if(status){
    status.textContent=adicionados+' registro(s) adicionado(s)'+(duplicados>0?(' — '+duplicados+' já existente(s) ignorado(s)'):'')+'. Total na lista: '+listaSourcing.length+'. Páginas coladas: '+totalColagens+'.';
  }
 }
-function salvarSourcing(){
- localStorage.setItem('coupaSourcingLista',JSON.stringify(listaSourcing));
+async function salvarSourcing(){
+ await _supa.from('crm_sourcing').delete().neq('id','00000000-0000-0000-0000-000000000000');
+ if(listaSourcing.length){
+   await _supa.from('crm_sourcing').insert(listaSourcing.map((n,i)=>({payload:n,total_colagens:i+1})));
+ }
  renderSourcing();
 }
 function renderSourcing(){
@@ -1085,13 +1127,13 @@ async function processarInformacoesSourcing(){
  let status=document.getElementById('statusSourcing');
  if(status) status.textContent=total+' evento(s) processado(s) no total.';
 }
-function limparListaSourcing(){
+async function limparListaSourcing(){
  if(listaSourcing.length===0) return;
  if(!confirm('Limpar toda a lista de Sourcing?')) return;
+ await _supa.from('crm_sourcing').delete().neq('id','00000000-0000-0000-0000-000000000000');
  listaSourcing=[];
  totalColagens=0;
- localStorage.setItem('coupaSourcingColagens','0');
- salvarSourcing();
+ renderSourcing();
  let status=document.getElementById('statusSourcing');
  if(status) status.textContent='';
 }
@@ -1169,13 +1211,7 @@ function exportCSV(){
 atualizarMarcasList();
 atualizarDescricoesList();
 atualizarFornecedoresList();
-atualizarDestinosList();
-renderSourcing();
-if(listaSourcing.length>0){
- let status=document.getElementById('statusSourcing');
- if(status) status.textContent='Total na lista: '+listaSourcing.length+'. Páginas coladas: '+totalColagens+'.';
-}
-render();
+inicializar();
 </script>
 </body>
 </html>
