@@ -416,7 +416,7 @@ function parseCoupa(txt){
      });
    });
  });
- await salvar();
+ salvar();
  alert(dados.length+' item(ns) importado(s).');
 }
 
@@ -490,13 +490,13 @@ function formatarPrecoBR(v){
  inteiro=inteiro.replace(/\B(?=(\d{3})+(?!\d))/g,'.');
  return inteiro+','+centavos;
 }
-async function edForn(i,idx,campo,valor){
+function edForn(i,idx,campo,valor){
  if(!dados[i].fornecedores) dados[i].fornecedores=[{nome:'',preco:''},{nome:'',preco:''},{nome:'',preco:''}];
  if(campo==='preco') valor=formatarPrecoBR(valor);
  dados[i].fornecedores[idx][campo]=valor;
- await salvar();
+ salvar();
 }
-async function calcularTotalNum(r,idx){
+function calcularTotalNum(r,idx){
  let f=(r.fornecedores&&r.fornecedores[idx])?r.fornecedores[idx]:{preco:''};
  let preco=parseFloat((f.preco||'').toString().replace(/\./g,'').replace(',','.'));
  let qtd=parseFloat((r.quantidade||'').toString().replace(/\./g,'').replace(',','.'));
@@ -1092,13 +1092,13 @@ function processarPasteLinhaSourcing(e,i){
  let r=listaSourcing[i];
  let codigoTexto=(texto.match(/Event #(\d+)/)||[])[1]||null;
  let precisaConfirmar=!codigoTexto||codigoTexto!==r.evento;
- let executar=async function(){
+ let executar=function(){
    let n=parseTextoLinhaSourcing(texto);
-   await salvar();
+   salvar();
    r.textoColado=texto;
    r.processado=true;
    r.aberto=true;
-   await salvarSourcing();
+   salvarSourcing();
    let status=document.getElementById('statusSourcing');
    if(status) status.textContent=n+' evento(s) processado(s) e adicionado(s) à tabela de cotações (Step 2).';
  };
@@ -1122,8 +1122,8 @@ async function processarInformacoesSourcing(){
    r.processado=true;
    r.aberto=true;
  }
- await salvar();
- await salvarSourcing();
+ salvar();
+ salvarSourcing();
  let status=document.getElementById('statusSourcing');
  if(status) status.textContent=total+' evento(s) processado(s) no total.';
 }
@@ -1146,18 +1146,18 @@ document.getElementById('colarSourcing').addEventListener('paste',function(e){
  this.innerHTML='';
 });
 
-async function ed(i,c,v){dados[i][c]=(typeof v==='string'?v.toUpperCase():v);await salvar();}
-async function toggleRow(i,v){dados[i].selecionado=v;await salvar();}
-async function toggleAll(cb){
+function ed(i,c,v){dados[i][c]=(typeof v==='string'?v.toUpperCase():v);salvar();}
+function toggleRow(i,v){dados[i].selecionado=v;salvar();}
+function toggleAll(cb){
  dados.forEach(r=>r.selecionado=cb.checked);
- await salvar();
+ salvar();
 }
-async function excluirSelecionados(){
+function excluirSelecionados(){
  let n=dados.filter(r=>r.selecionado).length;
  if(n===0){alert('Nenhuma linha selecionada.');return;}
  if(!confirm('Excluir '+n+' linha(s) selecionada(s)?')) return;
  dados=dados.filter(r=>!r.selecionado);
- await salvar();
+ salvar();
 }
 document.getElementById('busca').addEventListener('input',render);
 
