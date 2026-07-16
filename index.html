@@ -1156,6 +1156,10 @@ async function excluirSelecionados(){
  let n=dados.filter(r=>r.selecionado).length;
  if(n===0){alert('Nenhuma linha selecionada.');return;}
  if(!confirm('Excluir '+n+' linha(s) selecionada(s)?')) return;
+ let idsParaExcluir=dados.filter(r=>r.selecionado&&r.id).map(r=>r.id);
+ if(idsParaExcluir.length>0){
+   await _supa.from('crm_dados').delete().in('id',idsParaExcluir);
+ }
  dados=dados.filter(r=>!r.selecionado);
  await salvar();
 }
