@@ -496,7 +496,7 @@ async function edForn(i,idx,campo,valor){
  dados[i].fornecedores[idx][campo]=valor;
  await salvar();
 }
-async function calcularTotalNum(r,idx){
+function calcularTotalNum(r,idx){
  let f=(r.fornecedores&&r.fornecedores[idx])?r.fornecedores[idx]:{preco:''};
  let preco=parseFloat((f.preco||'').toString().replace(/\./g,'').replace(',','.'));
  let qtd=parseFloat((r.quantidade||'').toString().replace(/\./g,'').replace(',','.'));
