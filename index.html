@@ -3,8 +3,12 @@
 <html lang="pt-BR">
 <head>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <meta charset="UTF-8">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>CRM Compras Coupa</title>
 <style>
@@ -74,12 +78,71 @@ button{cursor:pointer}
 .cadtable th,.cadtable td{border-bottom:1px solid #eee;padding:8px;text-align:left;font-size:13px}
 .cadtable input{width:100%;box-sizing:border-box;padding:4px;font-size:13px}
 .btnFechar{background:#e74c3c;color:#fff;border:none;border-radius:4px;padding:6px 10px}
+#btnAlocarArquivo{background:#0b5fff;color:#fff;border:none;border-radius:4px}
+#btnAlocarArquivo:hover{background:#0847c4}
+#btnDownloadPreenchido{background:#1a7a3c;color:#fff;border:none;border-radius:4px}
+#btnDownloadPreenchido:hover{background:#145e2e}
+.toggle-unidade{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:#333;user-select:none}
+.toggle-unidade-lbl{font-size:12px}
+.toggle-switch{position:relative;display:inline-block;width:40px;height:20px}
+.toggle-switch input{opacity:0;width:0;height:0}
+.toggle-slider{position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:#0b5fff;border-radius:20px;transition:.2s}
+.toggle-slider:before{position:absolute;content:"";height:16px;width:16px;left:2px;top:2px;background:#fff;border-radius:50%;transition:.2s}
+.toggle-switch input:checked + .toggle-slider{background:#e07b00}
+.toggle-switch input:checked + .toggle-slider:before{transform:translateX(20px)}
+#modalAlocarArquivo{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:3000;align-items:flex-start;justify-content:center}
+.alocar-linha{border:1px solid #eee;border-radius:6px;padding:10px;margin-bottom:10px;font-size:13px}
+.alocar-status{font-size:12px;color:#1a7a3c;margin-top:4px;min-height:16px}
+#btnAdminEngrenagem{margin-left:auto;margin-right:10px;background:transparent;border:none;color:#cfe0ff;font-size:20px;cursor:pointer;padding:10px 14px;line-height:1}
+#btnAdminEngrenagem:hover{color:#fff}
+#btnLogout{background:transparent;border:none;color:#cfe0ff;font-size:13px;cursor:pointer;padding:10px 14px;line-height:1}
+#btnLogout:hover{color:#fff}
+#modalAdmin{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:4000;align-items:flex-start;justify-content:center}
+.adminbox{background:#fff;width:92%;max-width:960px;margin-top:30px;padding:16px;border-radius:6px;max-height:88vh;overflow:auto}
+.adminbox-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;border-bottom:1px solid #eee;padding-bottom:8px}
+.admintabs button{margin-right:6px;border:1px solid #ccc;background:#fff;border-radius:4px;padding:6px 12px;cursor:pointer;font-size:13px}
+.admintabs button.ativo{background:#0b5fff;color:#fff;border-color:#0b5fff}
+.admin-view{display:none;margin-top:14px}
+.admin-view.ativo{display:block}
+.admin-form{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;align-items:center}
+.admin-form input{padding:6px;font-size:13px}
+.admintable{width:100%;border-collapse:collapse;margin-top:8px}
+.admintable th,.admintable td{border-bottom:1px solid #eee;padding:8px;text-align:left;font-size:13px}
+.admin-upload-linha{border:1px solid #eee;border-radius:6px;padding:12px;margin-bottom:10px;font-size:13px}
+.admin-upload-status{font-size:12px;color:#1a7a3c;margin-top:4px;min-height:16px}
+.btnExcluirLinha{background:#e74c3c;color:#fff;border:none;border-radius:4px;padding:4px 8px;font-size:12px;cursor:pointer}
+.btnExcluirLinha:hover{background:#c0392b}
+.btnEditarLinha{background:#f1f1f1;border:1px solid #ccc;border-radius:4px;padding:3px 7px;font-size:12px;cursor:pointer}
+.btnEditarLinha:hover{background:#e0e0e0}
+#telaLogin{position:fixed;inset:0;background:#0b5fff;display:none;align-items:center;justify-content:center;z-index:9000}
+.login-box{background:#fff;border-radius:8px;padding:32px;width:320px;box-shadow:0 8px 24px rgba(0,0,0,.25);text-align:center}
+.login-box h2{margin:0 0 20px 0;color:#0b5fff}
+.login-box input{width:100%;box-sizing:border-box;padding:10px;margin-bottom:12px;border:1px solid #ccc;border-radius:4px;font-size:14px}
+.login-box button{width:100%;padding:10px;background:#0b5fff;color:#fff;border:none;border-radius:4px;font-size:14px;cursor:pointer}
+.login-box button:hover{background:#0847c4}
+#loginErro{color:#e74c3c;font-size:13px;min-height:16px;margin-bottom:8px}
+#appConteudo{display:none}
+#telaCarregando{position:fixed;inset:0;background:#0b5fff;display:flex;align-items:center;justify-content:center;z-index:9500;color:#fff;font-size:15px}
 </style>
 </head>
 <body>
+<div id="telaCarregando">Carregando...</div>
+<div id="telaLogin">
+<div class="login-box">
+<h2>CRM Compras Coupa</h2>
+<div id="loginErro"></div>
+<input type="text" id="loginNome" placeholder="Nome">
+<input type="password" id="loginSenha" placeholder="Senha" onkeydown="if(event.key==='Enter') realizarLogin()">
+<button onclick="realizarLogin()">Entrar</button>
+</div>
+</div>
+
+<div id="appConteudo">
 <div class="steps-nav">
 <button id="btnStep1" class="step-btn ativo" onclick="mostrarStep(1)">Step 1 (Sourcing)</button>
 <button id="btnStep2" class="step-btn" onclick="mostrarStep(2)">Step 2</button>
+<button id="btnAdminEngrenagem" title="Administrador" onclick="abrirAdmin()">⚙️</button>
+<button id="btnLogout" title="Sair" onclick="realizarLogout()">Sair</button>
 </div>
 
 <div id="step1" class="step-view ativo">
@@ -140,7 +203,26 @@ button{cursor:pointer}
 <button onclick="exportCSV()">Exportar Excel</button>
 <input id="busca" placeholder="Buscar">
 <button id="btnExcluir" onclick="excluirSelecionados()">Excluir Selecionados</button>
+<span id="lblUsuarioLogado" style="color:#0b5fff;font-weight:600;font-size:13px;margin:0 10px"></span>
 <button id="btnCadastro" onclick="abrirCadastro()">Cadastro</button>
+<button id="btnAlocarArquivo" onclick="abrirAlocarArquivo()">Alocar Arquivo</button>
+<label class="toggle-unidade" title="Selecione a unidade para geração do arquivo">
+<span class="toggle-unidade-lbl" id="lblUnidadeEsq">Matriz MG</span>
+<span class="toggle-switch">
+<input type="checkbox" id="seletorUnidade" checked onchange="atualizarLabelUnidade()">
+<span class="toggle-slider"></span>
+</span>
+<span class="toggle-unidade-lbl" id="lblUnidadeDir">Filial ES</span>
+</label>
+<button id="btnDownloadPreenchido" onclick="baixarPlanilhaPreenchida()">Download</button>
+<label class="toggle-unidade" title="Escolha a origem do arquivo modelo para o download">
+<span class="toggle-unidade-lbl" id="lblOrigemLocal">Local</span>
+<span class="toggle-switch">
+<input type="checkbox" id="seletorOrigemArquivo" checked onchange="atualizarLabelOrigemArquivo()">
+<span class="toggle-slider"></span>
+</span>
+<span class="toggle-unidade-lbl" id="lblOrigemOnline">Online</span>
+</label>
 </nav>
 
 <datalist id="destinos">
@@ -258,10 +340,102 @@ button{cursor:pointer}
 <div id="cadastroConteudo"></div>
 </div>
 </div>
+
+<div id="modalAlocarArquivo">
+<div class="cadbox">
+<div class="cadbox-head">
+<b>Alocar Arquivos Modelo (Excel)</b>
+<button class="btnFechar" onclick="fecharAlocarArquivo()">Fechar</button>
+</div>
+<p style="font-size:12px;color:#666;margin:0 0 12px 0">Os arquivos alocados aqui permanecem arquivados permanentemente no navegador até que o usuário faça upload de um novo arquivo para substituí-los.</p>
+<div class="alocar-linha">
+<b>Matriz MG</b> — Formação de Preço de Venda - Comag MG - Versão 10 - 06-07-26
+<div><input type="file" id="fileTemplateMG" accept=".xlsx"></div>
+<div id="statusTemplateMG" class="alocar-status"></div>
+</div>
+<div class="alocar-linha">
+<b>Filial ES</b> — Formação de Preço de Venda - Comag ES - Versão 10 - 06-07-26
+<div><input type="file" id="fileTemplateES" accept=".xlsx"></div>
+<div id="statusTemplateES" class="alocar-status"></div>
+</div>
+</div>
+</div>
+</div>
+
+<div id="modalAdmin">
+<div class="adminbox">
+<div class="adminbox-head">
+<div class="admintabs">
+<button id="btnAdminTabUsuarios" onclick="mostrarAdminTab('usuarios')">Usuários</button>
+<button id="btnAdminTabFornecedores" onclick="mostrarAdminTab('fornecedores')">Fornecedores</button>
+<button id="btnAdminTabUpload" onclick="mostrarAdminTab('upload')">Upload</button>
+</div>
+<button class="btnFechar" onclick="fecharAdmin()">Fechar</button>
+</div>
+
+<div id="adminViewUsuarios" class="admin-view">
+<b>Cadastro de Usuários</b>
+<div class="admin-form">
+<input type="text" id="adminUsuarioNome" placeholder="Nome">
+<input type="text" id="adminUsuarioSobrenome" placeholder="Sobrenome">
+<input type="email" id="adminUsuarioEmail" placeholder="E-mail (opcional)">
+<input type="password" id="adminUsuarioSenha" placeholder="Senha">
+<select id="adminUsuarioCargo">
+<option value="Admin">Admin</option>
+<option value="Vendedor">Vendedor</option>
+<option value="Orçamentista" selected>Orçamentista</option>
+</select>
+<button onclick="adicionarUsuarioAdmin()">Adicionar</button>
+</div>
+<div id="adminUsuarioStatus" class="admin-upload-status"></div>
+<table class="admintable">
+<thead>
+<tr><th>Nome</th><th>Sobrenome</th><th>E-mail</th><th>Senha</th><th>Cargo</th><th></th></tr>
+</thead>
+<tbody id="tbAdminUsuarios"></tbody>
+</table>
+</div>
+
+<div id="adminViewFornecedores" class="admin-view">
+<b>Cadastro de Fornecedores</b>
+<div class="admin-form">
+<input type="text" id="adminFornecedorNome" placeholder="Nome">
+<input type="text" id="adminFornecedorSobrenome" placeholder="Sobrenome">
+<input type="text" id="adminFornecedorContato" placeholder="Nome do Contato">
+<input type="email" id="adminFornecedorEmail" placeholder="E-mail">
+<button onclick="adicionarFornecedorAdmin()">Adicionar</button>
+</div>
+<div id="adminFornecedorStatus" class="admin-upload-status"></div>
+<table class="admintable">
+<thead>
+<tr><th>Nome</th><th>Sobrenome</th><th>Nome do Contato</th><th>E-mail</th><th></th></tr>
+</thead>
+<tbody id="tbAdminFornecedores"></tbody>
+</table>
+</div>
+
+<div id="adminViewUpload" class="admin-view">
+<b>Upload de Arquivos por Filial</b>
+<p style="font-size:12px;color:#666;margin:8px 0 12px 0">Estes arquivos ficam armazenados no Supabase Storage como referência única para todos os usuários.</p>
+<div class="admin-upload-linha">
+<b>Filial ES</b>
+<div><input type="file" id="adminUploadFilialES" accept=".xlsx"></div>
+<div id="adminUploadFilialESStatus" class="admin-upload-status"></div>
+</div>
+<div class="admin-upload-linha">
+<b>Filial Matriz</b>
+<div><input type="file" id="adminUploadFilialMatriz" accept=".xlsx"></div>
+<div id="adminUploadFilialMatrizStatus" class="admin-upload-status"></div>
+</div>
+</div>
+
+</div>
+</div>
+
 </div>
 
 <script>
-const APP_VERSION = '1.0.0-SOBERANA';
+const APP_VERSION = '1.1.0-SOBERANA';
 const SUPA_URL='https://vqhxrbuwhanjzcgyvkzy.supabase.co';
 const SUPA_KEY='sb_publishable_Ky8s-Zb8YJ6NgQEnivZsCA_McgsXogt';
 const _supa=supabase.createClient(SUPA_URL,SUPA_KEY);
@@ -291,11 +465,12 @@ function forcarSoberaniaLocal(){
 }
 
 async function carregarDados(){
-  const {data, error}=await _supa.from('crm_dados').select('*').order('created_at',{ascending:true});
+  const {data, error}=await _supa.from('crm_dados').select('*').eq('usuario_id',usuarioLogado.id).order('created_at',{ascending:true});
   if(!error && data){
     dados=data;
   } else {
     dados=[];
+    if(error) alert('ERRO ao carregar dados do Step 2 (crm_dados): '+error.message+'. Verifique a política de RLS dessa tabela no Supabase.');
   }
   atualizarMarcasList();atualizarDescricoesList();atualizarFornecedoresList();atualizarDestinosList();render();
 }
@@ -312,7 +487,7 @@ async function carregarCadastros(){
 }
 
 async function carregarSourcing(){
-  const {data}=await _supa.from('crm_sourcing').select('*').order('created_at',{ascending:true});
+  const {data}=await _supa.from('crm_sourcing').select('*').eq('usuario_id',usuarioLogado.id).order('created_at',{ascending:true});
   if(data){
     listaSourcing=data.map(r=>({...r.payload,_id:r.id}));
     totalColagens=data.length>0?data[data.length-1].total_colagens||0:0;
@@ -328,8 +503,274 @@ async function inicializar(){
   await Promise.all([carregarCadastros(),carregarDados(),carregarSourcing()]);
 }
 
+let adminUsuarios=[];
+let adminFornecedores=[];
+let usuarioLogado=null;
+
+async function realizarLogin(){
+  const nome=document.getElementById('loginNome').value.trim();
+  const senha=document.getElementById('loginSenha').value;
+  const erroEl=document.getElementById('loginErro');
+  erroEl.textContent='';
+  if(!nome||!senha){
+    erroEl.textContent='Preencha nome e senha.';
+    return;
+  }
+  const {data,error}=await _supa.from('crm_usuarios').select('*').eq('nome',nome).eq('senha',senha).limit(1);
+  if(error||!data||data.length===0){
+    erroEl.textContent='Nome ou senha inválidos.';
+    return;
+  }
+  usuarioLogado=data[0];
+  sessionStorage.setItem('usuarioLogadoId', usuarioLogado.id);
+  entrarNoApp();
+}
+
+function entrarNoApp(){
+  document.getElementById('telaCarregando').style.display='none';
+  document.getElementById('telaLogin').style.display='none';
+  document.getElementById('appConteudo').style.display='block';
+  document.getElementById('lblUsuarioLogado').textContent='Olá, '+usuarioLogado.nome;
+  // Limpa qualquer dado ainda em memória de uma sessão anterior (outro usuário), evitando exibir
+  // por instantes a lista de Step1/Step2 de quem estava logado antes, até os dados do usuário atual chegarem
+  dados=[];
+  listaSourcing=[];
+  totalColagens=0;
+  render();
+  renderSourcing();
+  aplicarPermissoesCargo();
+  inicializar();
+}
+
+function aplicarPermissoesCargo(){
+  const ehAdmin = usuarioLogado && usuarioLogado.cargo==='Admin';
+  document.getElementById('btnAdminTabUsuarios').style.display = ehAdmin ? '' : 'none';
+  document.getElementById('btnAdminTabUpload').style.display = ehAdmin ? '' : 'none';
+}
+
+async function verificarSessaoExistente(){
+  const id=sessionStorage.getItem('usuarioLogadoId');
+  if(!id){
+    document.getElementById('telaCarregando').style.display='none';
+    document.getElementById('telaLogin').style.display='flex';
+    return;
+  }
+  const {data,error}=await _supa.from('crm_usuarios').select('*').eq('id',id).limit(1);
+  if(!error && data && data.length>0){
+    usuarioLogado=data[0];
+    entrarNoApp();
+  } else {
+    document.getElementById('telaCarregando').style.display='none';
+    document.getElementById('telaLogin').style.display='flex';
+  }
+}
+
+function realizarLogout(){
+  usuarioLogado=null;
+  sessionStorage.removeItem('usuarioLogadoId');
+  // Limpa os dados da sessão encerrada imediatamente, para que não fiquem visíveis
+  // caso outro usuário faça login em seguida na mesma aba
+  dados=[];
+  listaSourcing=[];
+  totalColagens=0;
+  render();
+  renderSourcing();
+  document.getElementById('lblUsuarioLogado').textContent='';
+  document.getElementById('appConteudo').style.display='none';
+  document.getElementById('loginNome').value='';
+  document.getElementById('loginSenha').value='';
+  document.getElementById('loginErro').textContent='';
+  document.getElementById('telaCarregando').style.display='none';
+  document.getElementById('telaLogin').style.display='flex';
+}
+
+function abrirAdmin(){
+  document.getElementById('modalAdmin').style.display='flex';
+  aplicarPermissoesCargo();
+  const ehAdmin = usuarioLogado && usuarioLogado.cargo==='Admin';
+  mostrarAdminTab(ehAdmin ? 'usuarios' : 'fornecedores');
+}
+
+function fecharAdmin(){
+  document.getElementById('modalAdmin').style.display='none';
+}
+
+function mostrarAdminTab(aba){
+  document.getElementById('adminViewUsuarios').classList.toggle('ativo',aba==='usuarios');
+  document.getElementById('adminViewFornecedores').classList.toggle('ativo',aba==='fornecedores');
+  document.getElementById('adminViewUpload').classList.toggle('ativo',aba==='upload');
+  document.getElementById('btnAdminTabUsuarios').classList.toggle('ativo',aba==='usuarios');
+  document.getElementById('btnAdminTabFornecedores').classList.toggle('ativo',aba==='fornecedores');
+  document.getElementById('btnAdminTabUpload').classList.toggle('ativo',aba==='upload');
+  if(aba==='usuarios') carregarUsuariosAdmin();
+  if(aba==='fornecedores') carregarFornecedoresAdmin();
+}
+
+async function carregarUsuariosAdmin(){
+  const {data, error}=await _supa.from('crm_usuarios').select('*').order('nome',{ascending:true});
+  adminUsuarios = error ? [] : (data||[]);
+  renderUsuariosAdmin();
+}
+
+function renderUsuariosAdmin(){
+  const tb=document.getElementById('tbAdminUsuarios');
+  tb.innerHTML='';
+  adminUsuarios.forEach(u=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML='<td>'+(u.nome||'')+'</td><td>'+(u.sobrenome||'')+'</td><td>'+(u.email||'')+'</td><td>••••••</td><td>'+(u.cargo||'')+'</td><td><button class="btnEditarLinha" title="Editar senha" onclick="editarSenhaUsuarioAdmin(\''+u.id+'\')">✏️</button> <button class="btnExcluirLinha" onclick="excluirUsuarioAdmin(\''+u.id+'\')">Excluir</button></td>';
+    tb.appendChild(tr);
+  });
+}
+
+async function editarSenhaUsuarioAdmin(id){
+  const usuario=adminUsuarios.find(u=>u.id===id);
+  if(!usuario) return;
+  const novaSenha=prompt('Nova senha para '+usuario.nome+':');
+  if(novaSenha===null) return;
+  if(!novaSenha.trim()){
+    alert('A senha não pode ficar vazia.');
+    return;
+  }
+  const {error}=await _supa.from('crm_usuarios').update({senha:novaSenha}).eq('id',id);
+  if(error){
+    alert('Erro ao atualizar senha: '+error.message);
+    return;
+  }
+  document.getElementById('adminUsuarioStatus').textContent='Senha de '+usuario.nome+' atualizada.';
+  carregarUsuariosAdmin();
+}
+
+async function adicionarUsuarioAdmin(){
+  const nome=document.getElementById('adminUsuarioNome').value.trim();
+  const sobrenome=document.getElementById('adminUsuarioSobrenome').value.trim();
+  const email=document.getElementById('adminUsuarioEmail').value.trim();
+  const senha=document.getElementById('adminUsuarioSenha').value;
+  const cargo=document.getElementById('adminUsuarioCargo').value;
+  const status=document.getElementById('adminUsuarioStatus');
+  if(!nome||!senha){
+    status.textContent='Preencha ao menos nome e senha.';
+    return;
+  }
+  const {error}=await _supa.from('crm_usuarios').insert({nome,sobrenome,email,senha,cargo});
+  if(error){
+    status.textContent='Erro ao salvar: '+error.message;
+    return;
+  }
+  status.textContent='Usuário adicionado.';
+  document.getElementById('adminUsuarioNome').value='';
+  document.getElementById('adminUsuarioSobrenome').value='';
+  document.getElementById('adminUsuarioEmail').value='';
+  document.getElementById('adminUsuarioSenha').value='';
+  document.getElementById('adminUsuarioCargo').value='Orçamentista';
+  carregarUsuariosAdmin();
+}
+
+async function excluirUsuarioAdmin(id){
+  await _supa.from('crm_usuarios').delete().eq('id',id);
+  carregarUsuariosAdmin();
+}
+
+async function carregarFornecedoresAdmin(){
+  const {data, error}=await _supa.from('crm_fornecedores_admin').select('*').order('nome',{ascending:true});
+  adminFornecedores = error ? [] : (data||[]);
+  renderFornecedoresAdmin();
+}
+
+function renderFornecedoresAdmin(){
+  const tb=document.getElementById('tbAdminFornecedores');
+  tb.innerHTML='';
+  adminFornecedores.forEach(f=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML='<td>'+(f.nome||'')+'</td><td>'+(f.sobrenome||'')+'</td><td>'+(f.contato||'')+'</td><td>'+(f.email||'')+'</td><td><button class="btnExcluirLinha" onclick="excluirFornecedorAdmin(\''+f.id+'\')">Excluir</button></td>';
+    tb.appendChild(tr);
+  });
+}
+
+async function adicionarFornecedorAdmin(){
+  const nome=document.getElementById('adminFornecedorNome').value.trim();
+  const sobrenome=document.getElementById('adminFornecedorSobrenome').value.trim();
+  const contato=document.getElementById('adminFornecedorContato').value.trim();
+  const email=document.getElementById('adminFornecedorEmail').value.trim();
+  const status=document.getElementById('adminFornecedorStatus');
+  if(!nome||!email){
+    status.textContent='Preencha ao menos nome e e-mail.';
+    return;
+  }
+  const {error}=await _supa.from('crm_fornecedores_admin').insert({nome,sobrenome,contato,email});
+  if(error){
+    status.textContent='Erro ao salvar: '+error.message;
+    return;
+  }
+  status.textContent='Fornecedor adicionado.';
+  document.getElementById('adminFornecedorNome').value='';
+  document.getElementById('adminFornecedorSobrenome').value='';
+  document.getElementById('adminFornecedorContato').value='';
+  document.getElementById('adminFornecedorEmail').value='';
+  carregarFornecedoresAdmin();
+}
+
+async function excluirFornecedorAdmin(id){
+  await _supa.from('crm_fornecedores_admin').delete().eq('id',id);
+  carregarFornecedoresAdmin();
+}
+
+async function confirmarSenhaAdmin(){
+  const senhaDigitada=prompt('Confirme sua senha de Administrador para continuar:');
+  if(senhaDigitada===null) return false;
+  if(!senhaDigitada.trim()){
+    alert('Senha não pode ficar vazia.');
+    return false;
+  }
+  const {data, error}=await _supa.from('crm_usuarios').select('id').eq('senha',senhaDigitada).eq('cargo','Admin').limit(1);
+  if(error || !data || data.length===0){
+    alert('Acesso negado: senha inválida ou usuário não é Administrador.');
+    return false;
+  }
+  return true;
+}
+
+async function uploadArquivoFilialAdmin(inputId, statusId, caminho){
+  const input=document.getElementById(inputId);
+  const status=document.getElementById(statusId);
+  const arquivo=input.files[0];
+  if(!arquivo){
+    status.textContent='Selecione um arquivo .xlsx.';
+    return;
+  }
+  const autorizado=await confirmarSenhaAdmin();
+  if(!autorizado){
+    status.textContent='Upload cancelado: confirmação de Administrador não realizada.';
+    input.value='';
+    return;
+  }
+  status.textContent='Enviando...';
+  const {error}=await _supa.storage.from('arquivos-filiais').upload(caminho, arquivo, {upsert:true});
+  if(error){
+    status.textContent='Erro ao enviar: '+error.message;
+    return;
+  }
+  status.textContent='Arquivo enviado com sucesso em '+new Date().toLocaleString('pt-BR');
+  input.value='';
+}
+
+document.getElementById('adminUploadFilialES').addEventListener('change', ()=>{
+  uploadArquivoFilialAdmin('adminUploadFilialES','adminUploadFilialESStatus','filial-es.xlsx');
+});
+document.getElementById('adminUploadFilialMatriz').addEventListener('change', ()=>{
+  uploadArquivoFilialAdmin('adminUploadFilialMatriz','adminUploadFilialMatrizStatus','filial-matriz.xlsx');
+});
+
 async function salvar(){
-  const res = await _supa.from('crm_dados').upsert(dados,{onConflict:'id'}).select();
+  if(!usuarioLogado || !usuarioLogado.id){
+    alert('Sessão não identificada — atualize a página e faça login novamente antes de salvar, para evitar gravar dados sem dono.');
+    return;
+  }
+  const linhasComUsuario = dados.map(r=>({...r, usuario_id:usuarioLogado.id}));
+  const res = await _supa.from('crm_dados').upsert(linhasComUsuario,{onConflict:'id'}).select();
+  if(res.error){
+    alert('ERRO ao salvar no Supabase — os dados NÃO foram gravados: '+res.error.message+' (Detalhe: '+(res.error.details||res.error.hint||'sem detalhe')+'). Verifique a política de RLS da tabela crm_dados.');
+    return;
+  }
   if(res.data){
     dados = res.data;
   }
@@ -405,7 +846,8 @@ function parseCoupa(txt){
 
      let descricao='';
      let fabricante='';
-     let ptM=seg.match(/PT\s*\|\|([\s\S]*?)(?=\*{5,}|Manufacturer Name|Need By Date|$)/i);
+     let descricao_suspeita=false;
+     let ptM=seg.match(/\bPT\s*\|{1,2}([\s\S]*?)(?=\*{5,}|Manufacturer Name|Need By Date|$)/i);
      if(ptM){
        let ptTexto=ptM[1].trim();
        let fabM=ptTexto.match(/FABRICANTE\/REFERENCIA\s*:\s*([^;\n\r]+)/i);
@@ -414,9 +856,23 @@ function parseCoupa(txt){
        }
        descricao=ptTexto.replace(/;\s*$/,'').trim();
      }
-     if(!descricao) descricao=(item.headerRaw||'').replace(/\|\|/g,' - ').trim();
+     if(!descricao){
+       // Camada 2: prefixo PT| ou PT|| nao encontrado - tenta capturar o bloco inteiro da secao Description, sem depender do prefixo de idioma
+       let descBlocoM=seg.match(/Description\s*\n([\s\S]*?)(?=\n(?:Manufacturer Name|NCM|Need By Date))/i);
+       if(descBlocoM){
+         descricao=descBlocoM[1].replace(/^(?:PT|EN|ES)\s*\|{1,2}\s*/i,'').trim();
+       }
+     }
+     if(!descricao){
+       // Camada 3: ultimo recurso - usa o cabecalho generico do item e sinaliza para revisao manual
+       descricao=(item.headerRaw||'').replace(/\|\|/g,' - ').trim();
+       descricao_suspeita=true;
+     }
 
      let quantidade=(seg.match(/Capacity\s*\n?\s*(\d+)/i)||[])[1] || (seg.match(/Expected Quantity[\s\S]*?(\d+)/i)||[])[1] || '';
+
+     // Remove prefixo de quantidade/unidade que às vezes vem no início da descrição (ex: "2PC ", "1UN "), pois a quantidade já tem coluna própria
+     descricao = descricao.replace(/^\d+\s*[A-ZÇÕÃÁÉÍÓÚ]{1,6}\b\s*/, '').trim();
 
      let marcaFinal = fabricante || marca(descricao);
 
@@ -426,6 +882,7 @@ function parseCoupa(txt){
        ncm:ncm,
        codigo:item.codigo.toUpperCase(),
        descricao:descricao.toUpperCase(),
+       descricao_suspeita:descricao_suspeita,
        fabricante:fabricante.toUpperCase(),
        marca:marcaFinal.toUpperCase(),
        fornecedores:[{nome:'',preco:''},{nome:'',preco:''},{nome:'',preco:''}],
@@ -619,7 +1076,7 @@ function render(){
  <td>${r.evento}</td>
  <td>${r.ncm||''}</td>
  <td>${r.codigo}</td>
- <td contenteditable style="height:auto;white-space:normal;word-break:break-word;overflow-wrap:break-word;text-transform:uppercase" onblur="ed(${i},'descricao',this.innerText)">${r.descricao}</td>
+ <td contenteditable style="height:auto;white-space:normal;word-break:break-word;overflow-wrap:break-word;text-transform:uppercase${r.descricao_suspeita?';background:#fff3cd':''}" title="${r.descricao_suspeita?'Descrição não localizada no campo Description — revisar manualmente.':''}" onblur="ed(${i},'descricao',this.innerText)">${r.descricao_suspeita?'⚠️ ':''}${r.descricao}</td>
  <td><input list="marcasList" value="${r.marca||''}" style="text-transform:uppercase" onchange="ed(${i},'marca',this.value)"></td>
  <td>${renderFornecedoresCell(r,i)}</td>
  <td>${r.quantidade}</td>
@@ -897,7 +1354,7 @@ async function processarColagemSourcing(texto,html){
  let adicionados=0,duplicados=0;
  for(const n of novos){
    if(n.evento && !listaSourcing.some(x=>x.evento===n.evento)){
-     const {data}=await _supa.from('crm_sourcing').insert({payload:n,total_colagens:totalColagens}).select().single();
+     const {data}=await _supa.from('crm_sourcing').insert({payload:n,total_colagens:totalColagens,usuario_id:usuarioLogado.id}).select().single();
      if(data){listaSourcing.push({...n,_id:data.id});}
      adicionados++;
    } else if(n.evento){
@@ -911,9 +1368,13 @@ async function processarColagemSourcing(texto,html){
  }
 }
 async function salvarSourcing(){
- await _supa.from('crm_sourcing').delete().neq('id','00000000-0000-0000-0000-000000000000');
+ if(!usuarioLogado || !usuarioLogado.id){
+   alert('Sessão não identificada — atualize a página e faça login novamente antes de salvar, para evitar apagar ou gravar dados sem dono.');
+   return;
+ }
+ await _supa.from('crm_sourcing').delete().eq('usuario_id',usuarioLogado.id);
  if(listaSourcing.length){
-   await _supa.from('crm_sourcing').insert(listaSourcing.map((n,i)=>({payload:n,total_colagens:i+1})));
+   await _supa.from('crm_sourcing').insert(listaSourcing.map((n,i)=>({payload:n,total_colagens:i+1,usuario_id:usuarioLogado.id})));
  }
  renderSourcing();
 }
@@ -1044,17 +1505,32 @@ function parseTextoLinhaSourcing(txt){
 
      let descricao='';
      let fabricante='';
-     let ptM=seg.match(/PT\s*\|\|([\s\S]*?)(?=\*{5,}|Manufacturer Name|Need By Date|$)/i);
+     let descricao_suspeita=false;
+     let ptM=seg.match(/\bPT\s*\|{1,2}([\s\S]*?)(?=\*{5,}|Manufacturer Name|Need By Date|$)/i);
      if(ptM){
        let ptTexto=ptM[1].trim();
        let fabM=ptTexto.match(/FABRICANTE\/REFERENCIA\s*:\s*([^;\n\r]+)/i);
        if(fabM){ fabricante=fabM[1].trim(); }
        descricao=ptTexto.replace(/;\s*$/,'').trim();
      }
-     if(!descricao) descricao=(item.headerRaw||'').replace(/\|\|/g,' - ').trim();
+     if(!descricao){
+       // Camada 2: prefixo PT| ou PT|| nao encontrado - tenta capturar o bloco inteiro da secao Description, sem depender do prefixo de idioma
+       let descBlocoM=seg.match(/Description\s*\n([\s\S]*?)(?=\n(?:Manufacturer Name|NCM|Need By Date))/i);
+       if(descBlocoM){
+         descricao=descBlocoM[1].replace(/^(?:PT|EN|ES)\s*\|{1,2}\s*/i,'').trim();
+       }
+     }
+     if(!descricao){
+       // Camada 3: ultimo recurso - usa o cabecalho generico do item e sinaliza para revisao manual
+       descricao=(item.headerRaw||'').replace(/\|\|/g,' - ').trim();
+       descricao_suspeita=true;
+     }
 
      let quantityMatch=(seg.match(/Capacity\s*\n?\s*(\d+)/i) || seg.match(/Expected Quantity[\s\S]*?(\d+)/i));
      let quantidade=quantityMatch?quantityMatch[1]:'';
+
+     // Remove prefixo de quantidade/unidade que às vezes vem no início da descrição (ex: "2PC ", "1UN "), pois a quantidade já tem coluna própria
+     descricao = descricao.replace(/^\d+\s*[A-ZÇÕÃÁÉÍÓÚ]{1,6}\b\s*/, '').trim();
 
      let hybridBrand=fabricante||marca(descricao);
 
@@ -1064,6 +1540,7 @@ function parseTextoLinhaSourcing(txt){
        ncm:ncmItem,
        codigo:item.codigo.toUpperCase(),
        descricao:descricao.toUpperCase(),
+       descricao_suspeita:descricao_suspeita,
        fabricante:fabricante.toUpperCase(),
        marca:hybridBrand.toUpperCase(),
        fornecedores:[{nome:'',preco:''},{nome:'',preco:''},{nome:'',preco:''}],
@@ -1182,7 +1659,7 @@ function dispararOpcoesLimpeza(){
     document.body.removeChild(overlay);
     setTimeout(async function(){
       if(confirm('Você confirma a limpeza da lista completa?')){
-        await _supa.from('crm_sourcing').delete().neq('id','00000000-0000-0000-0000-000000000000');
+        await _supa.from('crm_sourcing').delete().eq('usuario_id',usuarioLogado.id);
         listaSourcing=[];
         totalColagens=0;
         renderSourcing();
@@ -1226,7 +1703,7 @@ async function excluirSelecionados(){
    const TAMANHO_LOTE = 50;
    for(let i=0; i<idsParaExcluir.length; i+=TAMANHO_LOTE){
      let lote = idsParaExcluir.slice(i, i+TAMANHO_LOTE);
-     const { error } = await _supa.from('crm_dados').delete().in('id', lote);
+     const { error } = await _supa.from('crm_dados').delete().in('id', lote).eq('usuario_id',usuarioLogado.id);
      if(error){
        alert('Erro ao excluir no Supabase: '+error.message+' (Detalhe: '+(error.details||error.hint||'sem detalhe')+')');
        return;
@@ -1290,10 +1767,217 @@ function exportCSV(){
  XLSX.utils.book_append_sheet(wb,ws,'Cotações');
  XLSX.writeFile(wb,'coupa_tratado.xlsx',{cellStyles:true});
 }
+const LS_TEMPLATE_MG='CRM_TEMPLATE_MG';
+const LS_TEMPLATE_ES='CRM_TEMPLATE_ES';
+
+function abrirAlocarArquivo(){
+ document.getElementById('modalAlocarArquivo').style.display='flex';
+ atualizarStatusTemplates();
+}
+function fecharAlocarArquivo(){
+ document.getElementById('modalAlocarArquivo').style.display='none';
+}
+function atualizarStatusTemplates(){
+ let mg=localStorage.getItem(LS_TEMPLATE_MG);
+ let es=localStorage.getItem(LS_TEMPLATE_ES);
+ let stMG=document.getElementById('statusTemplateMG');
+ let stES=document.getElementById('statusTemplateES');
+ if(stMG) stMG.textContent = mg ? ('Arquivo alocado: '+JSON.parse(mg).nome) : 'Nenhum arquivo alocado.';
+ if(stES) stES.textContent = es ? ('Arquivo alocado: '+JSON.parse(es).nome) : 'Nenhum arquivo alocado.';
+}
+function lerArquivoParaTemplate(file,chaveStorage){
+ return new Promise((resolve,reject)=>{
+   let r=new FileReader();
+   r.onload=()=>{
+     let base64=r.result.split(',')[1];
+     localStorage.setItem(chaveStorage, JSON.stringify({nome:file.name, base64:base64}));
+     resolve();
+   };
+   r.onerror=reject;
+   r.readAsDataURL(file);
+ });
+}
+document.getElementById('fileTemplateMG').addEventListener('change', async e=>{
+ let f=e.target.files[0];
+ if(!f) return;
+ await lerArquivoParaTemplate(f, LS_TEMPLATE_MG);
+ atualizarStatusTemplates();
+});
+document.getElementById('fileTemplateES').addEventListener('change', async e=>{
+ let f=e.target.files[0];
+ if(!f) return;
+ await lerArquivoParaTemplate(f, LS_TEMPLATE_ES);
+ atualizarStatusTemplates();
+});
+
+function atualizarLabelUnidade(){
+ let chk=document.getElementById('seletorUnidade');
+ document.getElementById('lblUnidadeEsq').style.fontWeight = chk.checked ? 'normal':'700';
+ document.getElementById('lblUnidadeDir').style.fontWeight = chk.checked ? '700':'normal';
+}
+atualizarLabelUnidade();
+
+function atualizarLabelOrigemArquivo(){
+ let chk=document.getElementById('seletorOrigemArquivo');
+ document.getElementById('lblOrigemLocal').style.fontWeight = chk.checked ? 'normal':'700';
+ document.getElementById('lblOrigemOnline').style.fontWeight = chk.checked ? '700':'normal';
+}
+atualizarLabelOrigemArquivo();
+
+function formatarDataAbreviada(str){
+ if(!str) return '';
+ let partes=str.split('/');
+ if(partes.length!==3) return str;
+ return partes[0]+'/'+partes[1]+'/'+partes[2].slice(-2);
+}
+function colLetraParaNum(col){
+ let n=0;
+ for(let i=0;i<col.length;i++){ n = n*26 + (col.charCodeAt(i)-64); }
+ return n;
+}
+async function baixarPlanilhaPreenchida(){
+ let unidade = document.getElementById('seletorUnidade').checked ? 'ES' : 'MG';
+ let origemOnline = document.getElementById('seletorOrigemArquivo').checked;
+ let base64Arquivo=null;
+
+ if(!origemOnline){
+   // ORIGEM LOCAL - fluxo original, inalterado
+   let chaveStorage = unidade==='MG' ? LS_TEMPLATE_MG : LS_TEMPLATE_ES;
+   let stored=localStorage.getItem(chaveStorage);
+   if(!stored){
+     alert('Nenhum arquivo alocado para '+(unidade==='MG'?'Matriz MG':'Filial ES')+'. Use o botão "Alocar Arquivo" para carregar o modelo.');
+     return;
+   }
+   let obj=JSON.parse(stored);
+   base64Arquivo=obj.base64;
+ } else {
+   // ORIGEM ONLINE - baixa do bucket do Supabase
+   let caminhoBucket = unidade==='MG' ? 'filial-matriz.xlsx' : 'filial-es.xlsx';
+   let {data, error} = await _supa.storage.from('arquivos-filiais').download(caminhoBucket);
+   if(error || !data){
+     alert('Não foi possível baixar o arquivo online para '+(unidade==='MG'?'Matriz MG':'Filial ES')+'. Verifique se o admin já fez o upload em "Upload" no painel Administrador.');
+     return;
+   }
+   base64Arquivo = await new Promise((resolve,reject)=>{
+     let r=new FileReader();
+     r.onload=()=>resolve(r.result.split(',')[1]);
+     r.onerror=reject;
+     r.readAsDataURL(data);
+   });
+ }
+
+ let zip = await JSZip.loadAsync(base64Arquivo, {base64:true});
+
+ let workbookXmlStr = await zip.file('xl/workbook.xml').async('string');
+ let wbDoc = new DOMParser().parseFromString(workbookXmlStr, 'application/xml');
+ let sheetsEl = wbDoc.getElementsByTagName('sheet');
+ let rId=null;
+ for(let s of sheetsEl){ if(s.getAttribute('name')==='Análise Preço'){ rId=s.getAttribute('r:id'); break; } }
+ if(!rId){
+   alert('A aba "Análise Preço" não foi encontrada no arquivo alocado.');
+   return;
+ }
+
+ let relsStr = await zip.file('xl/_rels/workbook.xml.rels').async('string');
+ let relsDoc = new DOMParser().parseFromString(relsStr, 'application/xml');
+ let relsEl = relsDoc.getElementsByTagName('Relationship');
+ let target=null;
+ for(let r of relsEl){ if(r.getAttribute('Id')===rId){ target=r.getAttribute('Target'); break; } }
+ let sheetPath = target.startsWith('/') ? target.slice(1) : ('xl/'+target);
+
+ let sheetXmlStr = await zip.file(sheetPath).async('string');
+ let sheetDoc = new DOMParser().parseFromString(sheetXmlStr, 'application/xml');
+ let ns = sheetDoc.documentElement.namespaceURI;
+ let sheetData = sheetDoc.getElementsByTagName('sheetData')[0];
+
+ function getOrCreateRow(rowNum){
+   let rows=Array.from(sheetData.getElementsByTagName('row'));
+   for(let row of rows){ if(parseInt(row.getAttribute('r'),10)===rowNum) return row; }
+   let newRow=sheetDoc.createElementNS(ns,'row');
+   newRow.setAttribute('r', String(rowNum));
+   let inserted=false;
+   for(let row of rows){
+     if(parseInt(row.getAttribute('r'),10)>rowNum){ sheetData.insertBefore(newRow,row); inserted=true; break; }
+   }
+   if(!inserted) sheetData.appendChild(newRow);
+   return newRow;
+ }
+ function setCellValue(rowNum, colLetter, valor, tipo){
+   let row=getOrCreateRow(rowNum);
+   let cellRef=colLetter+rowNum;
+   let cells=Array.from(row.getElementsByTagName('c'));
+   let targetCell=null;
+   for(let c of cells){ if(c.getAttribute('r')===cellRef){ targetCell=c; break; } }
+   if(!targetCell){
+     targetCell=sheetDoc.createElementNS(ns,'c');
+     targetCell.setAttribute('r', cellRef);
+     let inserted=false;
+     let colNum=colLetraParaNum(colLetter);
+     for(let c of cells){
+       let cLetter=c.getAttribute('r').replace(/[0-9]/g,'');
+       if(colLetraParaNum(cLetter) > colNum){ row.insertBefore(targetCell,c); inserted=true; break; }
+     }
+     if(!inserted) row.appendChild(targetCell);
+   }
+   Array.from(targetCell.children).forEach(ch=>targetCell.removeChild(ch));
+   if(tipo==='n'){
+     targetCell.removeAttribute('t');
+     let vEl=sheetDoc.createElementNS(ns,'v');
+     vEl.textContent=String(valor);
+     targetCell.appendChild(vEl);
+   } else {
+     targetCell.setAttribute('t','inlineStr');
+     let isEl=sheetDoc.createElementNS(ns,'is');
+     let tEl=sheetDoc.createElementNS(ns,'t');
+     tEl.setAttribute('xml:space','preserve');
+     tEl.textContent=valor;
+     isEl.appendChild(tEl);
+     targetCell.appendChild(isEl);
+   }
+   let spans=row.getAttribute('spans');
+   if(spans){
+     let partes=spans.split(':').map(Number);
+     let colNum=colLetraParaNum(colLetter);
+     if(colNum>partes[1]) row.setAttribute('spans', partes[0]+':'+colNum);
+   }
+ }
+
+ let view=getViewData();
+ view.forEach((o,pos)=>{
+   let r=o.r;
+   let linha=pos+2;
+   setCellValue(linha,'A', r.ncm||'', 's');
+   setCellValue(linha,'E', r.descricao||'', 's');
+   setCellValue(linha,'F', r.marca||'', 's');
+   let qtd=numBR(r.quantidade);
+   setCellValue(linha,'J', qtd===''?0:qtd, 'n');
+   setCellValue(linha,'BP', r.destino||'', 's');
+   setCellValue(linha,'BO', formatarDataAbreviada(r.end), 's');
+ });
+
+ let serializer=new XMLSerializer();
+ let novoXml='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\r\n'+serializer.serializeToString(sheetDoc.documentElement);
+ zip.file(sheetPath, novoXml);
+
+ let blob = await zip.generateAsync({type:'blob'});
+ let nomeBase = unidade==='MG'
+   ? 'Formação de Preço de Venda - Comag MG - Versão 10 - 06-07-26'
+   : 'Formação de Preço de Venda - Comag ES - Versão 10 - 06-07-26';
+ let nomeArquivo = nomeBase+' - PREENCHIDO.xlsx';
+ let url=URL.createObjectURL(blob);
+ let a=document.createElement('a');
+ a.href=url;
+ a.download=nomeArquivo;
+ document.body.appendChild(a);
+ a.click();
+ document.body.removeChild(a);
+ URL.revokeObjectURL(url);
+}
+
 atualizarMarcasList();
 atualizarDescricoesList();
 atualizarFornecedoresList();
-inicializar();
+verificarSessaoExistente();
 </script>
 </body>
 </html>
