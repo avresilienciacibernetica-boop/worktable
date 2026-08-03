@@ -203,7 +203,7 @@ button{cursor:pointer}
 <button onclick="exportCSV()">Exportar Excel</button>
 <input id="busca" placeholder="Buscar">
 <button id="btnExcluir" onclick="excluirSelecionados()">Excluir Selecionados</button>
-<span id="lblUsuarioLogado" style="color:#0b5fff;font-weight:600;font-size:13px;margin:0 10px"></span>
+<span id="lblUsuarioLogado" style="color:#fff;font-size:13px;margin:0 10px"></span>
 <button id="btnCadastro" onclick="abrirCadastro()">Cadastro</button>
 <button id="btnAlocarArquivo" onclick="abrirAlocarArquivo()">Alocar Arquivo</button>
 <label class="toggle-unidade" title="Selecione a unidade para geração do arquivo">
@@ -791,9 +791,10 @@ function prioridade(d){
  if(d<=7) return 'MÉDIA';
  return 'BAIXA';
 }
-function somaDias(d){
+function somaDias(d,h){
  let x=new Date();
  x.setDate(x.getDate()+Number(d));
+ x.setHours(x.getHours()+Number(h||0));
  return x.toLocaleDateString('pt-BR');
 }
 
@@ -808,11 +809,12 @@ function parseCoupa(txt){
  dados=[];
  let parts=txt.split(/Spot Bid from Req #/).filter(x=>x.trim());
  parts.forEach(p=>{
-   let ev=(p.match(/Event #(\d+)/)||[])[1];
+   let ev=(p.match(/Event #(\d+)/)||p.match(/Evento\s*n[º°o]\s*(\d+)/i)||[])[1];
    if(!ev) return;
 
-   let d=(p.match(/Event Ends[\s\S]*?(\d+)\s*days[\s\S]*?(\d+)\s*hrs/i)||[]);
+   let d=(p.match(/Event Ends[\s\S]*?(\d+)\s*days[\s\S]*?(\d+)\s*hrs/i)||p.match(/O evento termina[\s\S]*?(\d+)\s*dias[\s\S]*?(\d+)\s*hrs/i)||[]);
    let dias=d[1]||0;
+   let horas=d[2]||0;
 
    let itemMatches=[...p.matchAll(/(\d{6,})\s*\|\|\s*([^\n\r]+)/g)];
    let itemSegments=[];
@@ -847,7 +849,7 @@ function parseCoupa(txt){
      let descricao='';
      let fabricante='';
      let descricao_suspeita=false;
-     let ptM=seg.match(/\bPT\s*\|{1,2}([\s\S]*?)(?=\*{5,}|Manufacturer Name|Need By Date|$)/i);
+     let ptM=seg.match(/\bPT\s*\|{1,2}([\s\S]*?)(?=\*{5,}|Manufacturer Name|Need By Date|Nome do Fabricante|Necess[áa]rio at[ée]|$)/i);
      if(ptM){
        let ptTexto=ptM[1].trim();
        let fabM=ptTexto.match(/FABRICANTE\/REFERENCIA\s*:\s*([^;\n\r]+)/i);
@@ -858,7 +860,7 @@ function parseCoupa(txt){
      }
      if(!descricao){
        // Camada 2: prefixo PT| ou PT|| nao encontrado - tenta capturar o bloco inteiro da secao Description, sem depender do prefixo de idioma
-       let descBlocoM=seg.match(/Description\s*\n([\s\S]*?)(?=\n(?:Manufacturer Name|NCM|Need By Date))/i);
+       let descBlocoM=seg.match(/(?:Description|Descri[çc][ãa]o)\s*\n([\s\S]*?)(?=\n(?:Manufacturer Name|NCM|Need By Date|Nome do Fabricante|Necess[áa]rio at[ée]))/i);
        if(descBlocoM){
          descricao=descBlocoM[1].replace(/^(?:PT|EN|ES)\s*\|{1,2}\s*/i,'').trim();
        }
@@ -869,7 +871,7 @@ function parseCoupa(txt){
        descricao_suspeita=true;
      }
 
-     let quantidade=(seg.match(/Capacity\s*\n?\s*(\d+)/i)||[])[1] || (seg.match(/Expected Quantity[\s\S]*?(\d+)/i)||[])[1] || '';
+     let quantidade=(seg.match(/(?:Capacity|Capacidade)\s*\n?\s*(\d+)/i)||[])[1] || (seg.match(/(?:Expected Quantity|Quantidade esperada)[\s\S]*?(\d+)/i)||[])[1] || '';
 
      // Remove prefixo de quantidade/unidade que às vezes vem no início da descrição (ex: "2PC ", "1UN "), pois a quantidade já tem coluna própria
      descricao = descricao.replace(/^\d+\s*[A-ZÇÕÃÁÉÍÓÚ]{1,6}\b\s*/, '').trim();
@@ -887,7 +889,7 @@ function parseCoupa(txt){
        marca:marcaFinal.toUpperCase(),
        fornecedores:[{nome:'',preco:''},{nome:'',preco:''},{nome:'',preco:''}],
        quantidade:quantidade,
-       end:somaDias(dias),
+       end:somaDias(dias,horas),
        destino:removerAcentos(destino).toUpperCase(),
        prioridade:prioridade(Number(dias)),
        selecionado:false
@@ -1328,9 +1330,9 @@ function parseListaSourcingTexto(texto,html){
      resto=resto.slice(1);
    }
    let requisicao='';
-   let idxReq=resto.findIndex(l=>/Req\s*#\s*(\d+)/i.test(l));
+   let idxReq=resto.findIndex(l=>/(?:Req|Requisi[çc][ãa]o)\s*#\s*(\d+)/i.test(l));
    if(idxReq>=0){
-     requisicao=(resto[idxReq].match(/Req\s*#\s*(\d+)/i)||[])[1]||'';
+     requisicao=(resto[idxReq].match(/(?:Req|Requisi[çc][ãa]o)\s*#\s*(\d+)/i)||[])[1]||'';
      resto.splice(idxReq,1);
    }
    let datas=[];
@@ -1339,7 +1341,7 @@ function parseListaSourcingTexto(texto,html){
      return true;
    });
    let tipo='';
-   let idxTipo=resto.findIndex(l=>/^(RFQ|RFP|RFI|Auction|Sourcing Event|Spot Bid)$/i.test(l));
+   let idxTipo=resto.findIndex(l=>/^(RFQ|RFP|RFI|Auction|Sourcing Event|Spot Bid|Leil[ãa]o|Evento de Sourcing|Lance R[áa]pido|Solicita[çc][ãa]o de Cota[çc][ãa]o|Solicita[çc][ãa]o de Proposta|Solicita[çc][ãa]o de Informa[çc][ãa]o)$/i.test(l));
    if(idxTipo>=0){ tipo=resto[idxTipo]; resto.splice(idxTipo,1); }
    let outras=resto.join(' | ');
    let url=extrairLinkEvento(html,evento);
@@ -1455,14 +1457,15 @@ function parseTextoLinhaSourcing(txt){
  let adicionados=0;
  let parts=txt.split(/Spot Bid from Req #/).filter(x=>x.trim());
  parts.forEach(p=>{
-   let ev=(p.match(/Event #(\d+)/)||[])[1];
+   let ev=(p.match(/Event #(\d+)/)||p.match(/Evento\s*n[º°o]\s*(\d+)/i)||[])[1];
    if(!ev) return;
 
-   let d=(p.match(/Event Ends[\s\S]*?(\d+)\s*days[\s\S]*?(\d+)\s*hrs/i)||[]);
+   let d=(p.match(/Event Ends[\s\S]*?(\d+)\s*days[\s\S]*?(\d+)\s*hrs/i)||p.match(/O evento termina[\s\S]*?(\d+)\s*dias[\s\S]*?(\d+)\s*hrs/i)||[]);
    let dias=d[1]||0;
+   let horas=d[2]||0;
 
    let destino='';
-   let detailsM=p.match(/Details[\s\S]*?Local de entrega\s*:\s*([^\n]+)/i);
+   let detailsM=p.match(/(?:Details|Detalhes)[\s\S]*?Local de entrega\s*:\s*([^\n]+)/i);
    if(detailsM){
      let raw=detailsM[1].trim();
      let partes=raw.split('-').map(s=>s.trim()).filter(Boolean);
@@ -1506,7 +1509,7 @@ function parseTextoLinhaSourcing(txt){
      let descricao='';
      let fabricante='';
      let descricao_suspeita=false;
-     let ptM=seg.match(/\bPT\s*\|{1,2}([\s\S]*?)(?=\*{5,}|Manufacturer Name|Need By Date|$)/i);
+     let ptM=seg.match(/\bPT\s*\|{1,2}([\s\S]*?)(?=\*{5,}|Manufacturer Name|Need By Date|Nome do Fabricante|Necess[áa]rio at[ée]|$)/i);
      if(ptM){
        let ptTexto=ptM[1].trim();
        let fabM=ptTexto.match(/FABRICANTE\/REFERENCIA\s*:\s*([^;\n\r]+)/i);
@@ -1515,7 +1518,7 @@ function parseTextoLinhaSourcing(txt){
      }
      if(!descricao){
        // Camada 2: prefixo PT| ou PT|| nao encontrado - tenta capturar o bloco inteiro da secao Description, sem depender do prefixo de idioma
-       let descBlocoM=seg.match(/Description\s*\n([\s\S]*?)(?=\n(?:Manufacturer Name|NCM|Need By Date))/i);
+       let descBlocoM=seg.match(/(?:Description|Descri[çc][ãa]o)\s*\n([\s\S]*?)(?=\n(?:Manufacturer Name|NCM|Need By Date|Nome do Fabricante|Necess[áa]rio at[ée]))/i);
        if(descBlocoM){
          descricao=descBlocoM[1].replace(/^(?:PT|EN|ES)\s*\|{1,2}\s*/i,'').trim();
        }
@@ -1526,7 +1529,7 @@ function parseTextoLinhaSourcing(txt){
        descricao_suspeita=true;
      }
 
-     let quantityMatch=(seg.match(/Capacity\s*\n?\s*(\d+)/i) || seg.match(/Expected Quantity[\s\S]*?(\d+)/i));
+     let quantityMatch=(seg.match(/(?:Capacity|Capacidade)\s*\n?\s*(\d+)/i) || seg.match(/(?:Expected Quantity|Quantidade esperada)[\s\S]*?(\d+)/i));
      let quantidade=quantityMatch?quantityMatch[1]:'';
 
      // Remove prefixo de quantidade/unidade que às vezes vem no início da descrição (ex: "2PC ", "1UN "), pois a quantidade já tem coluna própria
@@ -1545,7 +1548,7 @@ function parseTextoLinhaSourcing(txt){
        marca:hybridBrand.toUpperCase(),
        fornecedores:[{nome:'',preco:''},{nome:'',preco:''},{nome:'',preco:''}],
        quantidade:quantidade,
-       end:somaDias(dias),
+       end:somaDias(dias,horas),
        destino:removerAcentos(destinoItem).toUpperCase(),
        prioridade:prioridade(Number(dias)),
        selecionado:false
@@ -1585,7 +1588,7 @@ function processarPasteLinhaSourcing(e,i){
  let texto=cd.getData('text/plain');
  if(!texto||!texto.trim()) return;
  let r=listaSourcing[i];
- let codigoTexto=(texto.match(/Event #(\d+)/)||[])[1]||null;
+ let codigoTexto=(texto.match(/Event #(\d+)/)||texto.match(/Evento\s*n[º°o]\s*(\d+)/i)||[])[1]||null;
  let precisaConfirmar=!codigoTexto||codigoTexto!==r.evento;
  let executar=function(){
    let n=parseTextoLinhaSourcing(texto);
@@ -1607,7 +1610,7 @@ async function processarInformacoesSourcing(){
  if(comTexto.length===0){alert('Nenhuma linha tem texto colado pendente de processar.');return;}
  let total=0;
  for(const r of comTexto){
-   let codigoTexto=(r.textoColado.match(/Event #(\d+)/)||[])[1]||null;
+   let codigoTexto=(r.textoColado.match(/Event #(\d+)/)||r.textoColado.match(/Evento\s*n[º°o]\s*(\d+)/i)||[])[1]||null;
    let prosseguir=true;
    if(!codigoTexto||codigoTexto!==r.evento){
      prosseguir=await confirmarDivergencia(codigoTexto,r.evento);
@@ -1953,6 +1956,7 @@ async function baixarPlanilhaPreenchida(){
    setCellValue(linha,'J', qtd===''?0:qtd, 'n');
    setCellValue(linha,'BP', r.destino||'', 's');
    setCellValue(linha,'BO', formatarDataAbreviada(r.end), 's');
+   setCellValue(linha,'BN', r.evento||'', 's');
  });
 
  let serializer=new XMLSerializer();
